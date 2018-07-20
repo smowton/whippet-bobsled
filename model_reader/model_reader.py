@@ -33,5 +33,18 @@ def dump_grid(grid):
             for x in range(0, resolution):
                 print("x:"+str(x) + " y:"+str(y)+ " z:"+str(z), grid[x,y,z])
 
+def dump_slices(grid_slice):
+    for z in range(0, resolution):
+        print("slice "+ str(z))
+        for x in range(0, resolution):
+            for y in range(0, resolution):
+                if (grid[x, z, y]):
+                    output_char = 'x'
+                else:
+                    output_char = '.'
+                sys.stdout.write(output_char)
+            sys.stdout.write('\n')
+        sys.stdout.flush()
 
 dump_grid(grid)
+dump_slices(grid)
