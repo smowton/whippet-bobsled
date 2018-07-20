@@ -1,5 +1,5 @@
 
-import types.trace
+import datatypes.trace
 
 def get_linear_axis(distance)
     assert types.trace.is_linear_difference(distance)
