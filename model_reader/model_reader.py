@@ -9,9 +9,9 @@ def read(input_file_name):
         print('Resolution is ' + str(resolution))
         bit_queue = []
         grid = numpy.empty((resolution, resolution, resolution), bool)
-        for z in range(0, resolution):
+        for x in range(0, resolution):
             for y in range(0, resolution):
-                for x in range(0, resolution):
+                for z in range(0, resolution):
                     if len(bit_queue) == 0:
                         byte = ord(input_file.read(1))
                         for i in range(0,8):
