@@ -1,6 +1,7 @@
 
 import numpy
 import datatypes.trace as tr
+import simple_move
 
 class SimpleTraceBuilder:
 
@@ -17,33 +18,7 @@ class SimpleTraceBuilder:
     def move_to(self, new_pos):
 
         needed = self.difference_to(new_pos)
-        while needed != (0, 0, 0):
-            if sum(map(lambda c: c != 0, needed)) == 2 and \
-                 all(tr.is_short_linear_difference((c, 0, 0)) for c in needed):
-                # LMove can solve it in one:
-                dist1 = None
-                dist2 = None
-                for (ax, c) in enumerate(needed):
-                    if c == 0:
-                        continue
-                    dist = [0, 0, 0]
-                    dist[ax] = c
-                    if dist1 is None:
-                        dist1 = tuple(dist)
-                    else:
-                        assert dist2 is None
-                        dist2 = tuple(dist)
-                self.trace.add(tr.Trace.LMove(dist1, dist2))
-                needed = (0, 0, 0)
-            else:
-                # SMove in direction requiring most travel
-                largest_ax = max(enumerate(needed), key = lambda pair : abs(pair[1]))
-                mv = [0, 0, 0]
-                mv[largest_ax[0]] = max(min(largest_ax[1], 15), -15)
-                mv = tuple(mv)
-                needed = tr.coord_subtract(needed, mv)
-                self.trace.add(tr.Trace.SMove(mv))
-
+        simple_move.move(needed, self.trace)
         self.pos = new_pos
 
     def difference_to(self, target):
