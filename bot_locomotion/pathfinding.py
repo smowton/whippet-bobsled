@@ -1,4 +1,5 @@
 import numpy as np
+import datatypes.trace as trace
 
 directions = [[-1, 0, 0],
              [ 0,-1, 0],
@@ -110,7 +111,39 @@ def calcHeuristic(grid, goal):
                 heuristic[x, y, z] = (x - goal[0]) + (y - goal[1]) + (z - goal[2])
     return heuristic
 
-# start = [1, 50, 10]
-# goal = [95, 50, 10]
-# path=search(start, goal, grid)
+def path_lines(path):
+    lines = []
+    direction = trace.coord_subtract(path[1], path[0])
+    lines.append((0, direction))
+    index = 1
+    while index < len(path):
+        new_direction = trace.coord_subtract(path[index], path[index - 1])
+        if direction != new_direction:
+            direction = new_direction
+            lines.append((1, direction))
+        else:
+            lines[-1] = (lines[-1][0] + 1, direction)
+        index += 1
+    return lines
 
+def path_commands(lines):
+    commands = []
+    index = 0
+    moved = 0
+    while index < len(lines):
+        distance = lines[index][0] - moved
+        # Not the last line, and the next two lines are a short distance
+        if index < len(lines) - 1 and distance <= 5 and lines[index + 1][0] <= 5:
+            commands.append(('L move', (distance, lines[index][1]), lines[index + 1]))
+            index += 1
+            moved = 0
+        # The next line is within a long distance
+        elif distance <= 15:
+            commands.append(('S move', (distance, lines[index][1])))
+            index += 1
+            moved = 0
+        # The next line longer than a long distance
+        else:
+            commands.append(('S move', (15, lines[index][1])))
+            moved += 15
+    return commands
