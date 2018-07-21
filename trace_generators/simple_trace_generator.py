@@ -146,17 +146,20 @@ class SimpleTraceBuilder:
                             continue
                         if self.model[neighbour]:
                             if not moved_this_row:
-                                if y != self.pos[1]:
-                                    # Make sure to move up first, out of range of any material
-                                    # we've built below.
-                                    self.move_to((self.pos[0], y, self.pos[2]))
-                                if x != self.pos[0] and last_used_z_step is not None:
+                                if (x != self.pos[0] or y != self.pos[1]) and last_used_z_step is not None:
                                     # The bot may still be in a ring of material from a previous
                                     # row -- make sure it moves out of it (i.e. either +1z or -1z
                                     # depending on the direction it was working in) before coming
                                     # across:
-                                    self.move_to((self.pos[0], self.pos[1], self.pos[2] + last_used_z_step))
+                                    # (Not necessary if already in the fringe):
+                                    if self.pos[2] != 0 and self.pos[2] != (self.resolution - 1):
+                                        self.move_to((self.pos[0], self.pos[1], self.pos[2] + last_used_z_step))
+                                    # Do the y move (if any) first, since we might have doubled
+                                    # back in the x direction, meaning there could be material
+                                    # in the way in the x direction we came from.
+                                    self.move_to((self.pos[0], y, self.pos[2]))
                                     self.move_to((x, self.pos[1], self.pos[2]))
+
                                 self.move_to((x, y, z))
                                 last_used_z_step = z_step
                                 moved_this_row = True
