@@ -10,3 +10,5 @@ print( model_functions.slice_is_empty(slice) )
 slice = grid[:, :, 19]
 model_reader.dump_slice(slice)
 print( model_functions.slice_is_empty(slice) )
+
+print(model_functions.bounds(grid))
