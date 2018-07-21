@@ -1,5 +1,8 @@
+from copy import deepcopy
 
 import serialize_trace.serializer as ser
+import numpy
+import datatypes.execution_state as execution_state
 
 def l1norm(coord):
     assert len(coord) == 3
@@ -28,8 +31,11 @@ def coord_add(a, b):
     return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 
 class Trace:
+    class Instruction:
+        def execute(self, state):
+            return ""
 
-    class Halt:
+    class Halt(Instruction):
         def __init__(self):
             pass
         def serialize(self, stream):
@@ -37,7 +43,7 @@ class Trace:
         def cost(self):
             return 0
 
-    class Wait:
+    class Wait(Instruction):
         def __init__(self):
             pass
         def serialize(self, stream):
@@ -45,32 +51,48 @@ class Trace:
         def cost(self):
             return 0
 
-    class Flip:
+    class Flip(Instruction):
         def __init__(self):
             pass
         def serialize(self, stream):
             stream.write(chr(0b11111101))
         def cost(self):
             return 0
+        def execute(self, state):
+            state.antigrav = not state.antigrav
+            return ""
 
-    class SMove:
+    class SMove(Instruction):
         def __init__(self, distance):
             self.distance = distance
             assert is_long_linear_difference(distance)
+
         def serialize(self, stream):
             ax = ser.get_linear_axis(self.distance)
             mag = ser.get_long_linear_biased_magnitude(self.distance)
             stream.write(chr(0b00000100 | (ax << 4)))
             stream.write(chr(mag))
+
         def cost(self):
             return 2 * l1norm(self.distance)
 
-    class LMove:
+        def execute(self, state):
+            state.add_volatile(state.current_bot.position)
+            new_position = deepcopy(state.current_bot.position).add_offset(execution_state.Voxel_position(self.distance))
+            existing_contents = state.contents_of_position(new_position)
+            if(existing_contents != ""):
+                return "Attempted to move bot to voxel which " + existing_contents
+            state.current_bot.position = new_position
+            return ""
+
+
+    class LMove(Instruction):
         def __init__(self, distance1, distance2):
             self.distance1 = distance1
             self.distance2 = distance2
             assert is_short_linear_difference(distance1)
             assert is_short_linear_difference(distance2)
+
         def serialize(self, stream):
             ax1 = ser.get_linear_axis(self.distance1)
             mag1 = ser.get_short_linear_biased_magnitude(self.distance1)
@@ -78,10 +100,21 @@ class Trace:
             mag2 = ser.get_short_linear_biased_magnitude(self.distance2)
             stream.write(chr(0b00001100 | (ax2 << 6) | (ax1 << 4)))
             stream.write(chr((mag2 << 4) | mag1))
+
         def cost(self):
             return (2 * (l1norm(self.distance1) + l1norm(self.distance2) + 2))
 
-    class FusionP:
+        def execute(self, state):
+            state.add_volatile(state.current_bot.position)
+            new_position = deepcopy(state.current_bot.position).add_offset(execution_state.Voxel_position(self.distance1))
+            new_position = new_position.add_offset(execution_state.Voxel_position(self.distance2))
+            existing_contents = state.contents_of_position(new_position)
+            if(existing_contents != ""):
+                return "Attempted to move bot to voxel which " + existing_contents
+            state.current_bot.position = new_position
+            return ""
+
+    class FusionP(Instruction):
         def __init__(self, distance):
             self.distance = distance
             assert is_near_difference(distance)
@@ -90,7 +123,7 @@ class Trace:
         def cost(self):
             return -24
 
-    class FusionS:
+    class FusionS(Instruction):
         def __init__(self, distance):
             self.distance = distance
             assert is_near_difference(distance)
@@ -99,7 +132,7 @@ class Trace:
         def cost(self):
             return 0 # Always grouped with FusionP, which pays the (negative) cost
 
-    class Fission:
+    class Fission(Instruction):
         def __init__(self, distance, seeds_kept):
             self.distance = distance
             self.seeds_kept = seeds_kept
@@ -110,7 +143,7 @@ class Trace:
         def cost(self):
             return 24
 
-    class Fill:
+    class Fill(Instruction):
         def __init__(self, distance):
             self.distance = distance
             assert is_near_difference(distance)
@@ -153,3 +186,21 @@ class Trace:
             traceidx += old_bots_active
 
         return total_cost
+
+    def validate(self, target_model):
+        dimension = target_model.shape[0]
+        state = execution_state.Execution_state(dimension)
+        trace_index = 0
+
+        while trace_index < len(self.instructions):
+
+            instruction = self.instructions[trace_index]
+            execution_error = instruction.execute(state)
+            if execution_error != "":
+                print("Error at instruction " + str(trace_index) + ".")
+                print(execution_error)
+                return False
+            state.select_next_bot()
+            trace_index += 1
+
+        return numpy.array_equal(target_model, state.current_model)
