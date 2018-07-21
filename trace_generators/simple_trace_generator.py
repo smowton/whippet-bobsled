@@ -11,6 +11,7 @@ class SimpleTraceBuilder:
         self.pos = (0, 0, 0)
         self.trace = tr.Trace()
         self.model = model
+        self.partial_model = numpy.zeros((self.resolution, self.resolution, self.resolution), bool)
 
     # No clipping yet, as the bot is always above all filled cells.
     def move_to(self, new_pos):
@@ -48,9 +49,44 @@ class SimpleTraceBuilder:
     def difference_to(self, target):
         return tr.coord_subtract(target, self.pos)
 
-    def make(self):
+    def is_grounded(self, coord):
 
-        self.trace.add(tr.Trace.Flip())
+        # Grounded if on the ground!
+        if coord[1] == 0:
+            return True
+
+        # Grounded if any adjacent filled block is grounded:
+        for ax in range(3):
+            for offset in (1, -1):
+                neighbour = list(coord)
+                neighbour[ax] += offset
+                neighbour = tuple(neighbour)
+                if self.partial_model[neighbour] and not self.ungrounded_blocks[neighbour]:
+                    return True
+
+        return False
+
+    def flood_grounded_from(self, coord):
+        # coord is a newly filled block and is grounded -- mark anything it's in contact
+        # with as grounded too.
+        worklist = [coord]
+
+        while len(worklist) != 0:
+            flood_from = worklist[-1]
+            worklist.pop()
+
+            for ax in range(3):
+                for offset in (1, -1):
+                    neighbour = list(coord)
+                    neighbour[ax] += offset
+                    neighbour = tuple(neighbour)
+
+                    if self.ungrounded_blocks[neighbour]:
+                        self.ungrounded_blocks[neighbour] = False
+                        self.num_ungrounded_blocks -= 1
+                        worklist.append(neighbour)
+
+    def make(self):
 
         for y in range(self.resolution):
             if y % 2 == 1:
@@ -78,11 +114,28 @@ class SimpleTraceBuilder:
                         self.move_to((x, y + 1, z + z_step))
                         to_target = self.difference_to((x, y, z))
 
+                    # Check if the new block will be ungrounded:
+                    new_block_grounded = self.is_grounded((x, y, z))
+
+                    # If anti-grav is currently off we must enable it before filling:
+                    if (not new_block_grounded) and self.num_ungrounded_blocks == 0:
+                        self.trace.add(tr.Trace.Flip())
+
                     self.trace.add(tr.Trace.Fill(to_target))
+                    self.partial_model[x, y, z] = True
+
+                    # Register the new block:
+                    self.ungrounded_blocks[x, y, z] = not new_block_grounded
+                    if not new_block_grounded:
+                        self.num_ungrounded_blocks += 1
+                    elif self.num_ungrounded_blocks != 0:
+                        # Check if the new block grounds anything:
+                        self.flood_grounded_from((x, y, z))
+                        if self.num_ungrounded_blocks == 0:
+                            # Object newly grounded -- switch anti-grav off.
+                            self.trace.add(tr.Trace.Flip())
 
         self.move_to((0, 0, 0))
-
-        self.trace.add(tr.Trace.Flip())
         self.trace.add(tr.Trace.Halt())
 
 def build_simple_trace(model):
