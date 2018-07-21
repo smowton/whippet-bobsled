@@ -87,11 +87,11 @@ def search(init, goal, grid):
                         pass
 
     path=[]
-    path.append([goal[0], goal[1], goal[2]])
+    path.append((goal[0], goal[1], goal[2]))
 
     while x != init[0] or y != init[1] or z != init[2]:
         x, y, z = move_direction(x, y, z, action[x, y, z], -1)
-        path.append([x, y, z])
+        path.append((x, y, z))
 
     path.reverse()
     return path

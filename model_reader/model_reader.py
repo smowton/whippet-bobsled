@@ -30,17 +30,15 @@ def dump_grid(grid):
             for x in range(0, resolution):
                 print("x:"+str(x) + " y:"+str(y)+ " z:"+str(z), grid[x,y,z])
 
-def dump_slices(grid, path = []):
+def dump_slices(grid, path = set()):
     resolution=grid.shape[0]
-    path_set = set((i[0], i[1], i[2]) for i in path)
-    print path_set
-    for y in range(0, resolution):
+    for y in range(5): #range(0, resolution):
         print("slice y="+ str(y))
         for z in range(0, resolution):
             for x in range(0, resolution):
                 if (grid[x, y, z]):
                     output_char = 'x'
-                elif ((x, y, z) in path_set):
+                elif ((x, y, z) in path):
                     output_char = '#'
                 else:
                     output_char = '.'
