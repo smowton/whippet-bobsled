@@ -112,3 +112,38 @@ class Trace:
             stream.write(chr(0b00000011 | (ser.get_near_difference_encoding(self.distance) << 3)))
         def cost(self):
             return 12 # Assumes we currently never fill a filled space
+
+    def __init__(self):
+        self.instructions = []
+
+    def add(self, instruction):
+        self.instructions.append(instruction)
+
+    def cost(self, model_dimension):
+        fixed_cost = (model_dimension ** 3) * 3 # Cost for a time-step with anti-grav off
+        total_cost = sum([i.cost() for i in self.instructions])
+
+        antigrav = False
+        bots_active = 1
+        traceidx = 0
+
+        while traceidx < len(self.instructions):
+
+            total_cost += (20 * bots_active)
+            total_cost += ((10 if antigrav else 1) * fixed_cost)
+            old_bots_active = bots_active
+
+            for i in range(bots_active):
+
+                step = self.instructions[traceidx + i]
+
+                if isinstance(step, Trace.Flip):
+                    antigrav = not antigrav
+                elif isinstance(step, Trace.Fission):
+                    bots_active += 1
+                elif isinstance(step, Trace.FusionP):
+                    bots_active -= 1
+
+            traceidx += old_bots_active
+
+        return total_cost
