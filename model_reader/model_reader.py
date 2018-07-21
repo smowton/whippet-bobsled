@@ -9,8 +9,7 @@ input_file_name = sys.argv[1]
 print('Reading file "' + input_file_name + '"')
 input_file = open(input_file_name, 'rb')
 try:
-    resolution_bytes = input_file.read(1)
-    resolution = int(resolution_bytes[0])
+    resolution = ord(input_file.read(1))
     print('Resolution is ' + str(resolution))
     bit_queue = []
     grid = numpy.empty((resolution, resolution, resolution), bool)
@@ -18,7 +17,7 @@ try:
         for y in range(0, resolution):
             for x in range(0, resolution):
                 if len(bit_queue) == 0:
-                    byte = int(input_file.read(1)[0])
+                    byte = ord(input_file.read(1))
                     for i in range(0,8):
                         bit_queue.append((byte >> i) & 1)
                 bit = bit_queue.pop(0)
