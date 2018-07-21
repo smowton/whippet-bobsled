@@ -20,5 +20,5 @@ def get_near_difference_encoding(distance):
 # Writes bytes to stream, which should be a file-pointer or similar.
 def serialize(trace, stream):
 
-    for instruction in trace:
+    for instruction in trace.instructions:
         instruction.serialize(stream)
