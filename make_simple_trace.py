@@ -12,7 +12,7 @@ if len(sys.argv) < 3:
     print("Usage: make_simple_trace.py some.mdl some.nbt [-f]", file = sys.stderr)
     sys.exit(1)
 
-if sys.argv[3] != '-f' and os.path.exists(sys.argv[2]):
+if (len(sys.argv) >= 4 and sys.argv[3] != '-f') or os.path.exists(sys.argv[2]):
     print("%s already exists" % sys.argv[2], file = sys.stderr)
     sys.exit(1)
 
