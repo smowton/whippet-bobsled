@@ -114,14 +114,13 @@ class SimpleTraceBuilder:
     def make(self):
 
         # Step through 3x3xz cuboids, building everything we can reach as we go.
+        last_used_z_step = None
 
         for y in range(1, self.resolution, 3):
             if y % 2 == 1:
                 x_range = range(self.resolution - 2, -1, -3)
             else:
                 x_range = range(2, self.resolution, 3)
-
-            moved_this_tier = False
 
             for x in x_range:
                 if x % 2 == 1:
@@ -147,12 +146,19 @@ class SimpleTraceBuilder:
                             continue
                         if self.model[neighbour]:
                             if not moved_this_row:
-                                if not moved_this_tier:
-                                    moved_this_tier = True
+                                if y != self.pos[1]:
                                     # Make sure to move up first, out of range of any material
                                     # we've built below.
-                                    self.move_to((self.pos[0], min(self.pos[1] + 3, self.resolution - 1), self.pos[2]))
+                                    self.move_to((self.pos[0], y, self.pos[2]))
+                                if x != self.pos[0] and last_used_z_step is not None:
+                                    # The bot may still be in a ring of material from a previous
+                                    # row -- make sure it moves out of it (i.e. either +1z or -1z
+                                    # depending on the direction it was working in) before coming
+                                    # across:
+                                    self.move_to((self.pos[0], self.pos[1], self.pos[2] + last_used_z_step))
+                                    self.move_to((x, self.pos[1], self.pos[2]))
                                 self.move_to((x, y, z))
+                                last_used_z_step = z_step
                                 moved_this_row = True
                             self.fill_block_at(neighbour)
 
