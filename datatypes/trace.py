@@ -21,6 +21,9 @@ def is_short_linear_difference(coord):
 def is_long_linear_difference(coord):
     return is_linear_difference(coord) and l1norm(coord) <= 15
 
+def coord_subtract(a, b):
+    return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
 class Trace:
 
     class Halt:
