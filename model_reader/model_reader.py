@@ -49,8 +49,8 @@ def dump_slices(grid, path = set()):
 # Example usage `dump_slice(grid[:, :, 1])`
 def dump_slice(grid):
     resolution = grid.shape[0]
-    for x in range(0, resolution):
-        for y in range(0, resolution):
+    for y in range(0, resolution):
+        for x in range(0, resolution):
             if grid[x, y]:
                 output_char = 'x'
             else:
