@@ -77,7 +77,7 @@ class SimpleTraceBuilder:
 
             for ax in range(3):
                 for offset in (1, -1):
-                    neighbour = list(coord)
+                    neighbour = list(flood_from)
                     neighbour[ax] += offset
                     neighbour = tuple(neighbour)
 
@@ -86,55 +86,79 @@ class SimpleTraceBuilder:
                         self.num_ungrounded_blocks -= 1
                         worklist.append(neighbour)
 
+    def fill_block_at(self, coord):
+
+        # Check if the new block will be ungrounded:
+        new_block_grounded = self.is_grounded(coord)
+
+        to_target = self.difference_to(coord)
+
+        # If anti-grav is currently off we must enable it before filling:
+        if (not new_block_grounded) and self.num_ungrounded_blocks == 0:
+            self.trace.add(tr.Trace.Flip())
+
+        self.trace.add(tr.Trace.Fill(to_target))
+        self.partial_model[coord] = True
+
+        # Register the new block:
+        self.ungrounded_blocks[coord] = not new_block_grounded
+        if not new_block_grounded:
+            self.num_ungrounded_blocks += 1
+        elif self.num_ungrounded_blocks != 0:
+            # Check if the new block grounds anything:
+            self.flood_grounded_from(coord)
+            if self.num_ungrounded_blocks == 0:
+                # Object newly grounded -- switch anti-grav off.
+                self.trace.add(tr.Trace.Flip())
+
     def make(self):
 
-        for y in range(self.resolution):
+        # Step through 3x3xz cuboids, building everything we can reach as we go.
+
+        for y in range(1, self.resolution, 3):
             if y % 2 == 1:
-                x_range = range(self.resolution - 1, -1, -1)
+                x_range = range(self.resolution - 2, -1, -3)
             else:
-                x_range = range(self.resolution)
+                x_range = range(2, self.resolution, 3)
+
+            moved_this_tier = False
+
             for x in x_range:
                 if x % 2 == 1:
                     z_range = range(self.resolution - 1, -1, -1)
                     z_step = -1
                 else:
-                    z_range = range(self.resolution)
+                    z_range = range(self.resolution + 1)
                     z_step = 1
                 for z in z_range:
 
-                    if not self.model[x, y, z]:
-                        continue
+                    moved_this_row = False
 
-                    to_target = self.difference_to((x, y, z))
+                    # Consider building blocks in order: the 3 below us, the 2 either side (x)
+                    # and one behind (z), then the 3 above us.
+                    neighbour_offsets = \
+                        [(-1, -1, 0), (0, -1, 0), (1, -1, 0),
+                         (-1, 0, 0), (1, 0, 0), (0, 0, -z_step),
+                         (-1, 1, 0), (0, 1, 0), (1, 1, 0)]
 
-                    if not tr.is_near_difference(to_target):
+                    for neighbour_offset in neighbour_offsets:
+                        neighbour = tr.coord_add((x, y, z), neighbour_offset)
+                        if any(c >= self.resolution or c < 0 for c in neighbour):
+                            continue
+                        if self.model[neighbour]:
+                            if not moved_this_row:
+                                if not moved_this_tier:
+                                    moved_this_tier = True
+                                    # Make sure to move up first, out of range of any material
+                                    # we've built below.
+                                    self.move_to((self.pos[0], min(self.pos[1] + 3, self.resolution - 1), self.pos[2]))
+                                self.move_to((x, y, z))
+                                moved_this_row = True
+                            self.fill_block_at(neighbour)
 
-                        # Get one z-step ahead of the required block
-                        # (always allowed due to border) to save on moves
-                        self.move_to((x, y + 1, z + z_step))
-                        to_target = self.difference_to((x, y, z))
-
-                    # Check if the new block will be ungrounded:
-                    new_block_grounded = self.is_grounded((x, y, z))
-
-                    # If anti-grav is currently off we must enable it before filling:
-                    if (not new_block_grounded) and self.num_ungrounded_blocks == 0:
-                        self.trace.add(tr.Trace.Flip())
-
-                    self.trace.add(tr.Trace.Fill(to_target))
-                    self.partial_model[x, y, z] = True
-
-                    # Register the new block:
-                    self.ungrounded_blocks[x, y, z] = not new_block_grounded
-                    if not new_block_grounded:
-                        self.num_ungrounded_blocks += 1
-                    elif self.num_ungrounded_blocks != 0:
-                        # Check if the new block grounds anything:
-                        self.flood_grounded_from((x, y, z))
-                        if self.num_ungrounded_blocks == 0:
-                            # Object newly grounded -- switch anti-grav off.
-                            self.trace.add(tr.Trace.Flip())
-
+        # Move carefully, over any material placed, then to the top corner, then down.
+        self.move_to((self.pos[0], self.resolution - 1, self.pos[2]))
+        self.move_to((0, self.resolution - 1, 0))
         self.move_to((0, 0, 0))
         self.trace.add(tr.Trace.Halt())
 
