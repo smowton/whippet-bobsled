@@ -119,8 +119,7 @@ def search(start, goal, grid, bounds):
             resign = True
             return None
         else:
-            openl.sort()
-            openl.reverse()
+            openl.sort(reverse=True)
             nextl = openl.pop()
 
             x = nextl[2]
