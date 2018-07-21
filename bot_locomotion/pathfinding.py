@@ -50,8 +50,7 @@ def search(init, goal, grid):
             resign = True
             return "Fail: Open List is empty"
         else:
-            openl.sort()
-            openl.reverse()
+            openl.sort(reverse=True)
             nextl = openl.pop()
 
             x = nextl[2]
