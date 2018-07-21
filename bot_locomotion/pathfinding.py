@@ -137,7 +137,7 @@ def path_commands(lines):
             lmove1 = trace.coord_scalar_multiply(lines[index][1], distance)
             lmove2 = trace.coord_scalar_multiply(lines[index + 1][1], lines[index + 1][0])
             commands.append(trace.Trace.LMove(lmove1, lmove2))
-            index += 1
+            index += 2
             moved = 0
         # The next line is within a long distance
         elif distance <= 15:
