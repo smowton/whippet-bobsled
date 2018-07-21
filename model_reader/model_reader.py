@@ -36,8 +36,8 @@ def dump_slices(grid, path = []):
     print path_set
     for y in range(0, resolution):
         print("slice y="+ str(y))
-        for x in range(0, resolution):
-            for z in range(0, resolution):
+        for z in range(0, resolution):
+            for x in range(0, resolution):
                 if (grid[x, y, z]):
                     output_char = 'x'
                 elif ((x, y, z) in path_set):
