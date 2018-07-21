@@ -27,6 +27,9 @@ def coord_subtract(a, b):
 def coord_add(a, b):
     return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 
+def coord_scalar_multiply(c, m):
+    return (c[0] * m, c[1] * m, c[2] * m)
+
 class Trace:
 
     class Halt:
@@ -124,6 +127,9 @@ class Trace:
 
     def add(self, instruction):
         self.instructions.append(instruction)
+
+    def extend(self, instructions):
+        self.instructions.extend(instructions)
 
     def cost(self, model_dimension):
         fixed_cost = (model_dimension ** 3) * 3 # Cost for a time-step with anti-grav off
