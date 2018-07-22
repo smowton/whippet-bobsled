@@ -24,7 +24,7 @@ class InverseBoringTraceBuilder:
         self.pos = new_pos
 
     def move_to(self, new_pos):
-        commands = pathfinding.path_to_commands(pathfinding.move(self.pos, new_pos, self.model, self.bounds))
+        commands = pathfinding.path_to_commands(pathfinding.move(self.pos, new_pos, self.partial_model, self.bounds))
         for command in commands:
             self.trace.add(command)
         total = (0, 0, 0)
@@ -148,10 +148,10 @@ class InverseBoringTraceBuilder:
                                     # Do the y move (if any) first, since we might have doubled
                                     # back in the x direction, meaning there could be material
                                     # in the way in the x direction we came from.
-                                    self.simple_move_to((self.pos[0], y, self.pos[2]))
-                                    self.simple_move_to((x, self.pos[1], self.pos[2]))
+                                    self.move_to((self.pos[0], y, self.pos[2]))
+                                    self.move_to((x, self.pos[1], self.pos[2]))
 
-                                self.simple_move_to((x, y, z))
+                                self.move_to((x, y, z))
                                 last_used_z_step = z_step
                                 moved_this_row = True
                             self.fill_block_at(neighbour)
