@@ -194,13 +194,13 @@ class Trace:
             #    return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot when current bot only holds " + str(old_seeds) + " seeds."
             if len(old_seeds) == 0:
                 return "Fission attempted from bot holding 0 seeds."
-            if self.seeds_given < 1:
-                return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot, must give at lease one seed."
+            # if self.seeds_given < 1:
+            #     return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot, must give at lease one seed."
             # Do the thing
-            state.current_bot.seeds = old_seeds[self.seeds_given:]
+            state.current_bot.seeds = old_seeds[self.seeds_given+1:]
             new_bot = execution_state.Bot()
             new_bot.id = old_seeds[0]
-            new_bot.seeds = old_seeds[1:self.seeds_given]
+            new_bot.seeds = old_seeds[1:self.seeds_given+1]
             new_bot.position = new_bot_position
             state.add_bot(new_bot)
             return ""
