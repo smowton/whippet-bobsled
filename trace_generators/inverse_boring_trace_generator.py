@@ -27,13 +27,6 @@ class InverseBoringTraceBuilder:
         commands = pathfinding.path_to_commands(pathfinding.move(self.pos, new_pos, self.partial_model, self.bounds))
         for command in commands:
             self.trace.add(command)
-        total = (0, 0, 0)
-        for cmd in commands:
-            if (isinstance(cmd, tr.Trace.SMove)):
-                total = tr.coord_add(total, cmd.distance)
-            if (isinstance(cmd, tr.Trace.LMove)):
-                total = tr.coord_add(total, cmd.distance1)
-                total = tr.coord_add(total, cmd.distance2)
 
         self.pos = new_pos
 
