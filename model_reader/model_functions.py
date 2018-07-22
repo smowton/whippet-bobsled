@@ -14,16 +14,15 @@ def rindex(list, item):
     list.reverse()
     return size - list.index(item) - 1
 
-
 def bounds(grid):
     resolution = grid.shape[0]
     x_slices_populated = map(lambda i: slice_is_empty(grid[i, :, :]), range(0, resolution))
     y_slices_populated = map(lambda i: slice_is_empty(grid[:, i, :]), range(0, resolution))
     z_slices_populated = map(lambda i: slice_is_empty(grid[:, :, i]), range(0, resolution))
-    tuple = (x_slices_populated.index(False), rindex(x_slices_populated, False),
-             y_slices_populated.index(False), rindex(y_slices_populated, False),
-             z_slices_populated.index(False), rindex(z_slices_populated, False) )
-    return tuple
+    lower = (x_slices_populated.index(False), y_slices_populated.index(False), z_slices_populated.index(False))
+    upper = (rindex(x_slices_populated, False), rindex(y_slices_populated, False), rindex(z_slices_populated, False))
+    return (lower, upper)
+
 
 def grid_diff(grid_a, grid_b):
     resolution = grid_a.shape[0]
