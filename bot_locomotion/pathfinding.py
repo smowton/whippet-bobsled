@@ -203,7 +203,7 @@ def path_to_commands(lines):
         # Not the last line, and the next two lines are a short distance
         if index < len(lines) - 1 and distance <= 5 and lines[index + 1][0] <= 5:
             commands.append(('L move', (distance, lines[index][1]), lines[index + 1]))
-            index += 1
+            index += 2
             moved = 0
         # The next line is within a long distance
         elif distance <= 15:
