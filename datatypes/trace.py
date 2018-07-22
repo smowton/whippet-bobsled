@@ -126,7 +126,7 @@ class Trace:
             return ""
 
     class FusionP(Instruction):
-        def __init__(self, distance, target_bot):
+        def __init__(self, distance, target_bot = None):
             self.distance = distance
             self.target_bot = target_bot
             assert is_near_difference(distance)
@@ -136,7 +136,7 @@ class Trace:
             return -24
 
     class FusionS(Instruction):
-        def __init__(self, distance, target_bot):
+        def __init__(self, distance, target_bot = None):
             self.distance = distance
             self.target_bot = target_bot
             assert is_near_difference(distance)
@@ -146,7 +146,7 @@ class Trace:
             return 0 # Always grouped with FusionP, which pays the (negative) cost
 
     class Fission(Instruction):
-        def __init__(self, distance, seeds_given, new_bot_id):
+        def __init__(self, distance, seeds_given, new_bot_id = None):
             self.distance = distance
             self.seeds_given = seeds_given
             self.new_bot_id = new_bot_id # Not serialized, just useful to know

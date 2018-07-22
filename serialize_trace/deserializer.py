@@ -61,7 +61,7 @@ def read_trace(stream):
             trace.add(tr.Trace.FusionS(decode_near_difference(byte >> 3)))
             pass
         elif short_opcode == 0b101:
-            trace.add(tr.Trace.Fission(decode_near_difference(byte >> 3)))
+            trace.add(tr.Trace.Fission(decode_near_difference(byte >> 3), ord(stream.read(1))))
             pass
         elif short_opcode == 0b011:
             trace.add(tr.Trace.Fill(decode_near_difference(byte >> 3)))
