@@ -30,6 +30,9 @@ def coord_subtract(a, b):
 def coord_add(a, b):
     return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 
+def coord_scalar_multiply(c, m):
+    return (c[0] * m, c[1] * m, c[2] * m)
+
 class Trace:
     class Instruction:
         def execute(self, state):
