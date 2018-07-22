@@ -117,32 +117,78 @@ class Trace:
     class FusionP(Instruction):
         def __init__(self, distance):
             self.distance = distance
+            self.bot = None # Not serialized. Used for execution
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000111 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
         def cost(self):
             return -24
+
+        def execute(self, state):
+            self.bot = state.current_bot
+            state.fusionPs.append(self)
+            return ""
+
 
     class FusionS(Instruction):
         def __init__(self, distance):
             self.distance = distance
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000110 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
         def cost(self):
             return 0 # Always grouped with FusionP, which pays the (negative) cost
 
+        def execute(self, state):
+            fusionPs = state.fusionPs
+            if len(fusionPs) == 0:
+                return "Attempted FusionS without preceding fusionP"
+            target_position = deepcopy(state.current_bot.position).add_offset(self.distance)
+            matchingFusionPs = filter(lambda fusionP: fusionP.bot.position == target_position, fusionPs)
+            if len(matchingFusionPs) != 0:
+                return "Attempted to FusionS without preceding fusionP for bot in matching position"
+
+            return ""
+
+
     class Fission(Instruction):
-        def __init__(self, distance, seeds_given, new_bot_id):
+        def __init__(self, distance, seeds_given, new_bot_id = None):
             self.distance = distance
             self.seeds_given = seeds_given
             self.new_bot_id = new_bot_id # Not serialized, just useful to know
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000101 | (ser.get_near_difference_encoding(self.distance) << 3)))
             stream.write(chr(self.seeds_given))
+
         def cost(self):
             return 24
+
+        def execute(self, state):
+            # Check positions
+            state.add_volatile(state.current_bot.position)
+            new_bot_position = deepcopy(state.current_bot.position).add_offset(self.distance)
+            existing_contents = state.contents_of_position(new_bot_position)
+            if existing_contents != "":
+                return "Attempted create bot in voxel which " + existing_contents
+            # Check seeds
+            old_seeds = state.current_bot.seeds
+            if self.seeds_given > old_seeds:
+                return "Fusion attempted to give " + str(self.seeds_given) + " seeds to new bot when current bot only holds " + str(old_seeds) + " seeds."
+            if self.seeds_given < 1:
+                return "Fusion attempted to give " + str(self.seeds_given) + " seeds to new bot, must give at lease one seed."
+            # Do the thing
+            state.current_bot.seeds = old_seeds - self.seeds_given
+            new_bot = execution_state.Bot()
+            new_bot.seeds = self.seeds_given - 1
+            new_bot.position = new_bot_position
+            return ""
+
 
     class Fill(Instruction):
         def __init__(self, distance):

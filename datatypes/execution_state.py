@@ -41,6 +41,7 @@ class Execution_state:
         self.current_model = numpy.zeros((dimension, dimension, dimension), bool)
         self.antigrav = False
         self.volatiles = []
+        self.fusionPs = []
 
     @property
     def current_bot(self):
@@ -73,3 +74,7 @@ class Execution_state:
 
     def add_volatile(self, volatile):
         self.volatiles.append(deepcopy(volatile))
+
+    def add_bot(self, bot):
+        # This is the wrong thing to do, because gaps from fusions are actually used first.
+        self.bots.append(bot)
