@@ -70,8 +70,6 @@ class SortingPrintFromAboveTraceBuilder:
             visit_order = [(x, z) for x in range(self.region_size[0]) for z in range(self.region_size[2]) if self.model[x, y, z]]
             visit_order = sorted(visit_order, key = lambda xz: (tier[xz], xz))
 
-            print visit_order
-
             for (x, z) in visit_order:
 
                 to_target = self.difference_to((x, y, z))
