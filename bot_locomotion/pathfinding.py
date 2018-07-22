@@ -16,6 +16,9 @@ def move_direction(x, y, z, direction, multiplier = 1):
     return x, y, z
 
 def move(start, goal, grid, bounds = None):
+    if start == goal:
+        return []
+
     path = quick_search(start, goal, grid)
     if (path):
         return path
@@ -79,6 +82,9 @@ def quick_search(start, goal, grid):
     return None
 
 def search(start, goal, grid, bounds):
+    if start == goal:
+        return []
+
     heuristic = calc_heuristic(grid, goal)
 
     start = trace.coord_subtract(start, bounds[0])
