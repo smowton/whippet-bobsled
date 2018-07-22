@@ -23,6 +23,20 @@ def bounds(grid):
     upper = (rindex(x_slices_populated, False), rindex(y_slices_populated, False), rindex(z_slices_populated, False))
     return (lower, upper)
 
+def outer_bounds(grid):
+    inner_bounds = bounds(grid)
+    return (
+        (
+            max(inner_bounds[0][0] - 1, 0),
+            max(inner_bounds[0][1] - 1, 0),
+            max(inner_bounds[0][2] - 1, 0)
+        ),
+        (
+            min(inner_bounds[1][0] + 1, grid.shape[0] - 1),
+            min(inner_bounds[1][1] + 1, grid.shape[1] - 1),
+            min(inner_bounds[1][2] + 1, grid.shape[2] - 1)
+        ),
+    )
 
 def grid_diff(grid_a, grid_b):
     resolution = grid_a.shape[0]
