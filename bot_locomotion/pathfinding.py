@@ -57,24 +57,25 @@ orders = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
 def quick_search(start, goal, grid):
     diff = trace.coord_subtract(goal, start)
     components = [
-        (diff[0], (1 if diff[0] > 0 else -1, 0, 0)),
-        (diff[1], (0, 1 if diff[1] > 0 else -1, 0)),
-        (diff[2], (0, 0, 1 if diff[2] > 0 else -1))
+        (diff[0], 0, 0),
+        (0, diff[1], 0),
+        (0, 0, diff[2])
     ]
     for order in orders:
         failed = False
         position = start
         lines = [components[order[0]], components[order[1]], components[order[2]]]
         for line in lines:
-            for i in range(line[0]):
-                position = trace.coord_add(position, line[1])
+            direction = trace.direction_vector(line)
+            for i in range(trace.l1norm(line)):
+                position = trace.coord_add(position, direction)
                 if grid[position[0], position[1], position[2]]:
                     failed = True
                     break
             if failed:
                 break
         if not failed:
-            return [line for line in lines if line[0] > 0]
+            return [line for line in lines if trace.l1norm(line) > 0]
     return None
 
 def search(start, goal, grid, bounds):
@@ -176,6 +177,8 @@ def calc_heuristic(grid, goal):
     return heuristic
 
 def search_path_lines(path):
+    if len(path) < 2:
+        return []
     lines = []
     direction = trace.coord_subtract(path[1], path[0])
     lines.append((0, direction))
@@ -188,28 +191,29 @@ def search_path_lines(path):
         else:
             lines[-1] = (lines[-1][0] + 1, direction)
         index += 1
-    return lines
+    return [trace.coord_scalar_multiply(line[1], line[0]) for line in lines]
 
 def path_to_commands(lines):
     commands = []
     index = 0
     moved = 0
     while index < len(lines):
-        distance = lines[index][0] - moved
+        direction = trace.direction_vector(lines[index])
+        distance = trace.l1norm(lines[index]) - moved
         # Not the last line, and the next two lines are a short distance
-        if index < len(lines) - 1 and distance <= 5 and lines[index + 1][0] <= 5:
-            lmove1 = trace.coord_scalar_multiply(lines[index][1], distance)
-            lmove2 = trace.coord_scalar_multiply(lines[index + 1][1], lines[index + 1][0])
+        if index < len(lines) - 1 and distance <= 5 and trace.l1norm(lines[index + 1]) <= 5:
+            lmove1 = trace.coord_scalar_multiply(direction, distance)
+            lmove2 = lines[index + 1]
             commands.append(trace.Trace.LMove(lmove1, lmove2))
             index += 2
             moved = 0
         # The next line is within a long distance
         elif distance <= 15:
-            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(lines[index][1], distance)))
+            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(direction, distance)))
             index += 1
             moved = 0
         # The next line longer than a long distance
         else:
-            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(lines[index][1], 15)))
+            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(direction, 15)))
             moved += 15
     return commands

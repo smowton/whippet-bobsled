@@ -13,7 +13,7 @@ path = pathfinding.move(start, goal, grid, bounds)
 edges = [start]
 position = start
 for line in path:
-    position = trace.coord_add(position,  trace.coord_scalar_multiply(line[1], line[0]))
+    position = trace.coord_add(position, line)
     edges.append(position)
 
 edges.append(goal)
@@ -21,3 +21,4 @@ edges.append(goal)
 model_reader.dump_slices(grid, edges)
 
 print path
+print pathfinding.path_to_commands(path)

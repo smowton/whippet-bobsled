@@ -33,6 +33,14 @@ def coord_add(a, b):
 def coord_scalar_multiply(c, m):
     return (c[0] * m, c[1] * m, c[2] * m)
 
+def direction_vector(v):
+    assert is_linear_difference(v)
+    return (
+        v[0] if v[0] == 0 else (1 if v[0] > 0 else -1),
+        v[1] if v[1] == 0 else (1 if v[1] > 0 else -1),
+        v[2] if v[2] == 0 else (1 if v[2] > 0 else -1),
+    )
+
 class Trace:
     class Instruction:
         def execute(self, state):
