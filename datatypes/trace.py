@@ -200,21 +200,19 @@ class Trace:
         return total_cost
 
     def validate(self, target_model):
+        # Convert instruction list field to local array for speed.
+        instructions = numpy.array(self.instructions)
         dimension = target_model.shape[0]
         state = execution_state.Execution_state(dimension)
-        trace_index = 0
         state.current_bot.seeds = 39
 
-        while trace_index < len(self.instructions):
-
-            instruction = self.instructions[trace_index]
-            execution_error = instruction.execute(state)
+        for trace_index in range(len(instructions)):
+            execution_error = instructions[trace_index].execute(state)
             if execution_error != "":
                 print("Error at instruction " + str(trace_index) + ".")
                 print(execution_error)
                 return state, False
             state.select_next_bot()
-            trace_index += 1
 
         valid = True
         if len(state.bots) != 1:
