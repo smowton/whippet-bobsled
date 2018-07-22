@@ -30,6 +30,17 @@ def coord_subtract(a, b):
 def coord_add(a, b):
     return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 
+def coord_scalar_multiply(c, m):
+    return (c[0] * m, c[1] * m, c[2] * m)
+
+def direction_vector(v):
+    assert is_linear_difference(v)
+    return (
+        v[0] if v[0] == 0 else (1 if v[0] > 0 else -1),
+        v[1] if v[1] == 0 else (1 if v[1] > 0 else -1),
+        v[2] if v[2] == 0 else (1 if v[2] > 0 else -1),
+    )
+
 class Trace:
     class Instruction:
         def execute(self, state):
@@ -115,9 +126,9 @@ class Trace:
             return ""
 
     class FusionP(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, target_bot = None):
             self.distance = distance
-            self.bot = None # Not serialized. Used for execution
+            self.target_bot = target_bot
             assert is_near_difference(distance)
 
         def serialize(self, stream):
@@ -133,8 +144,9 @@ class Trace:
 
 
     class FusionS(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, target_bot = None):
             self.distance = distance
+            self.target_bot = target_bot
             assert is_near_difference(distance)
 
         def serialize(self, stream):
@@ -191,8 +203,9 @@ class Trace:
 
 
     class Fill(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, absolute_coord = None):
             self.distance = distance
+            self.absolute_coord = absolute_coord # advisory only, not serialized.
             assert is_near_difference(distance)
 
         def serialize(self, stream):
@@ -208,6 +221,45 @@ class Trace:
             if existing_contents != "":
                 return "Attempted to fill to voxel which " + existing_contents
             state.current_model[position_to_fill.x, position_to_fill.y, position_to_fill.z] = True
+            return ""
+
+    class Void(Instruction):
+        def __init__(self, distance):
+            self.distance = distance
+            assert is_near_difference(distance)
+
+        def serialize(self, stream):
+            stream.write(chr(0b00000010 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
+        def cost(self):
+            return 12 # Assumes we currently never fill a filled space
+
+        def execute(self, state):
+            bot = state.current_bot
+            position_to_fill = deepcopy(bot.position).add_offset(self.distance)
+            existing_contents = state.contents_of_position(position_to_fill)
+            if existing_contents != "":
+                return "Attempted to fill to voxel which " + existing_contents
+            state.current_model[position_to_fill.x, position_to_fill.y, position_to_fill.z] = True
+            return ""
+
+    class Void(Instruction):
+        def __init__(self, distance, absolute_coord = None):
+            self.distance = distance
+            self.absolute_coord = absolute_coord # advisory only, not serialized.
+            assert is_near_difference(distance)
+
+        def serialize(self, stream):
+            stream.write(chr(0b00000010 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
+        def cost(self):
+            return -12 # Assumes we currently never void a filled space
+
+        def execute(self, state):
+            bot = state.current_bot
+            position_to_fill = deepcopy(bot.position).add_offset(self.distance)
+            existing_contents = state.contents_of_position(position_to_fill)
+            state.current_model[position_to_fill.x, position_to_fill.y, position_to_fill.z] = False
             return ""
 
     def __init__(self):

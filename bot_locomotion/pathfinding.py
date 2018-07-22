@@ -15,16 +15,88 @@ def move_direction(x, y, z, direction, multiplier = 1):
     z = z + directions[direction][2] * multiplier
     return x, y, z
 
-def search(init, goal, grid):
-    heuristic = calcHeuristic(grid, goal)
+def move(start, goal, grid, bounds = None):
+    if start == goal:
+        return []
 
-    xdim=grid.shape[0]
-    ydim=grid.shape[1]
-    zdim=grid.shape[2]
+    path = quick_search(start, goal, grid)
+    if (path):
+        return path
 
-    x = init[0]
-    y = init[1]
-    z = init[2]
+    if not bounds:
+        bounds = ((0,0,0), (grid.shape[0] - 1, grid.shape[1] - 1, grid.shape[2] - 1))
+
+    bounded_start = (
+        min(max(start[0], bounds[0][0]), bounds[1][0]),
+        min(max(start[1], bounds[0][1]), bounds[1][1]),
+        min(max(start[2], bounds[0][2]), bounds[1][2]),
+    )
+
+    bounded_goal = (
+        min(max(goal[0], bounds[0][0]), bounds[1][0]),
+        min(max(goal[1], bounds[0][1]), bounds[1][1]),
+        min(max(goal[2], bounds[0][2]), bounds[1][2]),
+    )
+
+    path_start = []
+    if start != bounded_start:
+        path_start = quick_search(start, bounded_start, grid)
+
+    path_end = []
+    if goal != bounded_goal:
+        path_end = quick_search(bounded_goal, goal, grid)
+
+    search_path = search(bounded_start, bounded_goal, grid, bounds)
+
+    if not search_path:
+        return None
+
+    return path_start + search_path + path_end
+
+
+# All possible orders of the 3 axes of direction
+orders = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+
+def quick_search(start, goal, grid):
+    diff = trace.coord_subtract(goal, start)
+    components = [
+        (diff[0], 0, 0),
+        (0, diff[1], 0),
+        (0, 0, diff[2])
+    ]
+    for order in orders:
+        failed = False
+        position = start
+        lines = [components[order[0]], components[order[1]], components[order[2]]]
+        for line in lines:
+            direction = trace.direction_vector(line)
+            for i in range(trace.l1norm(line)):
+                position = trace.coord_add(position, direction)
+                if grid[position[0], position[1], position[2]]:
+                    failed = True
+                    break
+            if failed:
+                break
+        if not failed:
+            return [line for line in lines if trace.l1norm(line) > 0]
+    return None
+
+def search(start, goal, grid, bounds):
+    if start == goal:
+        return []
+
+    heuristic = calc_heuristic(grid, goal)
+
+    start = trace.coord_subtract(start, bounds[0])
+    goal = trace.coord_subtract(goal, bounds[0])
+
+    xdim=bounds[1][0] - bounds[0][0] + 1
+    ydim=bounds[1][1] - bounds[0][1] + 1
+    zdim=bounds[1][2] - bounds[0][2] + 1
+
+    x = start[0]
+    y = start[1]
+    z = start[2]
 
     closed = np.empty((xdim,ydim,zdim), dtype=np.int8)
     closed[:] = 0
@@ -48,10 +120,9 @@ def search(init, goal, grid):
     while not found and not resign and count < 1e6:
         if len(openl) == 0:
             resign = True
-            return "Fail: Open List is empty"
+            return None
         else:
-            openl.sort()
-            openl.reverse()
+            openl.sort(reverse=True)
             nextl = openl.pop()
 
             x = nextl[2]
@@ -69,7 +140,7 @@ def search(init, goal, grid):
                     x2, y2, z2 = move_direction(x, y, z, i)
 
                     if z2 >= 0 and z2 < zdim and y2 >=0 and y2 < ydim and x2 >=0 and x2 < xdim:
-                        if closed[x2,y2,z2] == 0 and not grid[x2,y2,z2]:
+                        if closed[x2,y2,z2] == 0 and not grid[x2 + bounds[0][0], y2 + bounds[0][1], z2 + bounds[0][2]]:
 
                             continuation = False
                             for j in range(len(directions)):
@@ -90,14 +161,14 @@ def search(init, goal, grid):
     path=[]
     path.append((goal[0], goal[1], goal[2]))
 
-    while x != init[0] or y != init[1] or z != init[2]:
+    while x != start[0] or y != start[1] or z != start[2]:
         x, y, z = move_direction(x, y, z, action[x, y, z], -1)
         path.append((x, y, z))
 
     path.reverse()
-    return path
+    return search_path_lines(path)
 
-def calcHeuristic(grid, goal):
+def calc_heuristic(grid, goal):
     xdim=grid.shape[0]
     ydim=grid.shape[1]
     zdim=grid.shape[2]
@@ -111,7 +182,9 @@ def calcHeuristic(grid, goal):
                 heuristic[x, y, z] = (x - goal[0]) + (y - goal[1]) + (z - goal[2])
     return heuristic
 
-def path_lines(path):
+def search_path_lines(path):
+    if len(path) < 2:
+        return []
     lines = []
     direction = trace.coord_subtract(path[1], path[0])
     lines.append((0, direction))
@@ -124,26 +197,29 @@ def path_lines(path):
         else:
             lines[-1] = (lines[-1][0] + 1, direction)
         index += 1
-    return lines
+    return [trace.coord_scalar_multiply(line[1], line[0]) for line in lines]
 
-def path_commands(lines):
+def path_to_commands(lines):
     commands = []
     index = 0
     moved = 0
     while index < len(lines):
-        distance = lines[index][0] - moved
+        direction = trace.direction_vector(lines[index])
+        distance = trace.l1norm(lines[index]) - moved
         # Not the last line, and the next two lines are a short distance
-        if index < len(lines) - 1 and distance <= 5 and lines[index + 1][0] <= 5:
-            commands.append(('L move', (distance, lines[index][1]), lines[index + 1]))
-            index += 1
+        if index < len(lines) - 1 and distance <= 5 and trace.l1norm(lines[index + 1]) <= 5:
+            lmove1 = trace.coord_scalar_multiply(direction, distance)
+            lmove2 = lines[index + 1]
+            commands.append(trace.Trace.LMove(lmove1, lmove2))
+            index += 2
             moved = 0
         # The next line is within a long distance
         elif distance <= 15:
-            commands.append(('S move', (distance, lines[index][1])))
+            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(direction, distance)))
             index += 1
             moved = 0
         # The next line longer than a long distance
         else:
-            commands.append(('S move', (15, lines[index][1])))
+            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(direction, 15)))
             moved += 15
     return commands

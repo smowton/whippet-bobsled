@@ -2,6 +2,8 @@
 import numpy
 import datatypes.trace as tr
 import simple_move
+import bot_locomotion.pathfinding as pathfinding
+import model_reader.model_functions as model_functions
 
 class InverseBoringTraceBuilder:
 
@@ -12,12 +14,20 @@ class InverseBoringTraceBuilder:
         self.pos = (0, 0, 0)
         self.trace = tr.Trace()
         self.model = model
+        self.bounds = model_functions.outer_bounds(model)
         self.partial_model = numpy.zeros((self.resolution, self.resolution, self.resolution), bool)
 
-    def move_to(self, new_pos):
-
+    def simple_move_to(self, new_pos):
         needed = self.difference_to(new_pos)
         simple_move.move(needed, self.trace)
+
+        self.pos = new_pos
+
+    def move_to(self, new_pos):
+        commands = pathfinding.path_to_commands(pathfinding.move(self.pos, new_pos, self.partial_model, self.bounds))
+        for command in commands:
+            self.trace.add(command)
+
         self.pos = new_pos
 
     def difference_to(self, target):
