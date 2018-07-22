@@ -55,14 +55,14 @@ class Execution_state:
                position.z < self.dimension
 
     def contents_of_position(self, position):
+        if not self.position_in_bounds(position):
+            return "is out of bounds"
         if self.current_model[position.x, position.y, position.z]:
             return "is filled"
         if position in map(lambda bot: bot.position, self.bots):
             return "contains a bot"
         if position in self.volatiles:
             return "is volatile"
-        if not self.position_in_bounds(position):
-            return "is out of bounds"
         return ""
 
     def select_next_bot(self):

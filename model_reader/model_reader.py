@@ -2,11 +2,11 @@ import sys
 import numpy
 
 def read(input_file_name):
-    print('Reading file "' + input_file_name + '"')
+    #print('Reading file "' + input_file_name + '"')
     input_file = open(input_file_name, 'rb')
     try:
         resolution =  ord(input_file.read(1))
-        print('Resolution is ' + str(resolution))
+        #print('Resolution is ' + str(resolution))
         bit_queue = []
         grid = numpy.empty((resolution, resolution, resolution), bool)
         for x in range(0, resolution):

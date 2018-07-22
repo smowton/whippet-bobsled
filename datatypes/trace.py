@@ -203,6 +203,7 @@ class Trace:
         dimension = target_model.shape[0]
         state = execution_state.Execution_state(dimension)
         trace_index = 0
+        state.current_bot.seeds = 39
 
         while trace_index < len(self.instructions):
 
@@ -211,8 +212,19 @@ class Trace:
             if execution_error != "":
                 print("Error at instruction " + str(trace_index) + ".")
                 print(execution_error)
-                return False
+                return state, False
             state.select_next_bot()
             trace_index += 1
 
-        return (state, numpy.array_equal(target_model, state.current_model))
+        valid = True
+        if len(state.bots) != 1:
+            print("Final bot count is not 1.")
+            valid = False
+        elif state.current_bot.position.x != 0 or state.current_bot.position.y != 0 or state.current_bot.position.z != 0:
+            print("Final bot positon is not (0,0,0)")
+            valid = False
+        if not numpy.array_equal(target_model, state.current_model):
+            print("Final model does not match target model")
+            valid = False
+
+        return state, valid
