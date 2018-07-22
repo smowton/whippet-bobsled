@@ -2,6 +2,8 @@
 import numpy
 import datatypes.trace as tr
 import simple_move
+import bot_locomotion.pathfinding as pathfinding
+import model_reader.model_functions as model_functions
 
 class InverseBoringTraceBuilder:
 
@@ -12,12 +14,27 @@ class InverseBoringTraceBuilder:
         self.pos = (0, 0, 0)
         self.trace = tr.Trace()
         self.model = model
+        self.bounds = model_functions.outer_bounds(model)
         self.partial_model = numpy.zeros((self.resolution, self.resolution, self.resolution), bool)
 
-    def move_to(self, new_pos):
-
+    def simple_move_to(self, new_pos):
         needed = self.difference_to(new_pos)
         simple_move.move(needed, self.trace)
+
+        self.pos = new_pos
+
+    def move_to(self, new_pos):
+        commands = pathfinding.path_to_commands(pathfinding.move(self.pos, new_pos, self.model, self.bounds))
+        for command in commands:
+            self.trace.add(command)
+        total = (0, 0, 0)
+        for cmd in commands:
+            if (isinstance(cmd, tr.Trace.SMove)):
+                total = tr.coord_add(total, cmd.distance)
+            if (isinstance(cmd, tr.Trace.LMove)):
+                total = tr.coord_add(total, cmd.distance1)
+                total = tr.coord_add(total, cmd.distance2)
+
         self.pos = new_pos
 
     def difference_to(self, target):
@@ -131,10 +148,10 @@ class InverseBoringTraceBuilder:
                                     # Do the y move (if any) first, since we might have doubled
                                     # back in the x direction, meaning there could be material
                                     # in the way in the x direction we came from.
-                                    self.move_to((self.pos[0], y, self.pos[2]))
-                                    self.move_to((x, self.pos[1], self.pos[2]))
+                                    self.simple_move_to((self.pos[0], y, self.pos[2]))
+                                    self.simple_move_to((x, self.pos[1], self.pos[2]))
 
-                                self.move_to((x, y, z))
+                                self.simple_move_to((x, y, z))
                                 last_used_z_step = z_step
                                 moved_this_row = True
                             self.fill_block_at(neighbour)
