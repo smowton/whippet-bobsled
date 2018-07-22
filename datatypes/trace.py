@@ -115,8 +115,9 @@ class Trace:
             return ""
 
     class FusionP(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, target_bot):
             self.distance = distance
+            self.target_bot = target_bot
             assert is_near_difference(distance)
         def serialize(self, stream):
             stream.write(chr(0b00000111 | (ser.get_near_difference_encoding(self.distance) << 3)))
@@ -124,8 +125,9 @@ class Trace:
             return -24
 
     class FusionS(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, target_bot):
             self.distance = distance
+            self.target_bot = target_bot
             assert is_near_difference(distance)
         def serialize(self, stream):
             stream.write(chr(0b00000110 | (ser.get_near_difference_encoding(self.distance) << 3)))
