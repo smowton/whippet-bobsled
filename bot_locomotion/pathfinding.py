@@ -38,19 +38,15 @@ def move(start, goal, grid, bounds = None):
     path_start = []
     if start != bounded_start:
         path_start = quick_search(start, bounded_start, grid)
-        print 'path_start', path_start
 
     path_end = []
     if goal != bounded_goal:
         path_end = quick_search(bounded_goal, goal, grid)
-        print 'path_end', path_end
 
     search_path = search(bounded_start, bounded_goal, grid, bounds)
 
     if not search_path:
         return None
-
-    print 'search_path', search_path
 
     return path_start + search_path + path_end
 
