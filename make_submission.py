@@ -3,7 +3,7 @@
 # for each problem.
 
 # Arguments: make_submission.py models_directory output.zip
-# The models_directory should contain LA001...186_tgt.mdl, and is used only to figure out the
+# The models_directory should contain FA001...186_tgt.mdl, and is used only to figure out the
 # dimension of the relevant model.
 
 import sys
@@ -16,8 +16,8 @@ import shutil
 
 import serialize_trace.deserializer as deser
 
-if len(sys.argv) != 2 or not sys.argv[1].endswith(".zip"):
-    print >>sys.stderr, "Usage: make_submission.py output.zip"
+if len(sys.argv) != 3 or not sys.argv[1].endswith(".zip"):
+    print >>sys.stderr, "Usage: make_submission.py output.zip models_dir"
     sys.exit(1)
 
 if os.path.exists(sys.argv[1]):
@@ -35,8 +35,8 @@ for line in sys.stdin:
         continue
 
     filename = os.path.basename(line)
-    if re.match("LA\d{3}.nbt", filename) is None:
-        print >>sys.stderr, "File", line, "not of the expected form LANNN.nbt"
+    if re.match("F.\d{3}.nbt", filename) is None:
+        print >>sys.stderr, "File", line, "not of the expected form F?NNN.nbt"
         sys.exit(1)
 
     with open(line + ".cost", "r") as f:
@@ -46,9 +46,9 @@ for line in sys.stdin:
     if filename not in best_traces or best_traces[filename][1] > cost:
         best_traces[filename] = (line, cost)
 
-for modelpath in glob.glob(os.path.join(sys.argv[1], "*.mdl")):
+for modelpath in glob.glob(os.path.join(sys.argv[2], "F*.mdl")):
 
-    expected_nbt = os.path.basename(modelpath).replace("_tgt.mdl", ".nbt")
+    expected_nbt = os.path.basename(modelpath).replace("_tgt.mdl", ".nbt").replace("_src.mdl", ".nbt")
     if expected_nbt not in best_traces:
         print >>sys.stderr, "No trace found solving ", modelpath
         sys.exit(1)

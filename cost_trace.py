@@ -13,6 +13,10 @@ with open(sys.argv[1], "r") as f:
     trace = deser.read_trace(f)
 
 model_path = os.path.join(sys.argv[2], os.path.basename(sys.argv[1]).replace(".nbt", "_tgt.mdl"))
+if not os.path.exists(model_path):
+    # Destroy tasks have a source, not a target
+    model_path = os.path.join(sys.argv[2], os.path.basename(sys.argv[1]).replace(".nbt", "_src.mdl"))
+
 with open(model_path, "r") as f:
     dimension = ord(f.read(1))
 
