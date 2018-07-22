@@ -240,6 +240,11 @@ class Trace:
             state.current_model[position_to_fill.x, position_to_fill.y, position_to_fill.z] = False
             return ""
 
+    # A pseudo-instruction, waits until all active bots reach a barrier, then all proceed together.
+    class Barrier(Instruction):
+        def execute(self, state):
+            pass
+
     def __init__(self):
         self.instructions = []
 

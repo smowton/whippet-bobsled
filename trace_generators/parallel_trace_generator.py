@@ -162,7 +162,7 @@ class Bot:
         # Finally for simplicity move to the origin of my region:
         move.move(tr.coord_subtract((0, 0, 0), self.pos), self.trace)
 
-def build_parallel_trace(model):
+def build_parallel_trace(model, lockstep):
 
     res = len(model)
 
@@ -197,7 +197,7 @@ def build_parallel_trace(model):
         submodel = model[x_range_voxels, 0 : res, z_range_voxels]
 
         # Add build instructions for this region:
-        simple_trace_gen = pfa.PrintFromAboveTraceBuilder(submodel, False)
+        simple_trace_gen = pfa.PrintFromAboveTraceBuilder(submodel, False, lockstep)
         simple_trace_gen.make()
 
         # After the usual build process, go to the ceiling:
@@ -267,9 +267,12 @@ def build_parallel_trace(model):
             self.trace_index = 0
 
         def is_stalled(self):
+
             if self.done:
                 return True
+
             instruction = self.trace.instructions[self.trace_index]
+
             if isinstance(instruction, tr.Trace.FusionP) or isinstance(instruction, tr.Trace.FusionS):
                 target_bot_walker = walkers[instruction.target_bot]
                 if not target_bot_walker.active:
@@ -283,7 +286,15 @@ def build_parallel_trace(model):
                     return True
                 if target_bot_instruction.target_bot != self.idx:
                     return True
+
+            if isinstance(instruction, tr.Trace.Barrier):
+                if any(w is not None and not w.at_barrier() for w in walkers):
+                    return True
+
             return False
+
+        def at_barrier(self):
+            return (not self.done) and isinstance(self.trace.instructions[self.trace_index], tr.Trace.Barrier)
 
         def activate(self):
             assert not self.active
@@ -320,7 +331,8 @@ def build_parallel_trace(model):
                     instruction = tr.Trace.Wait()
                 else:
                     instruction = walker.get_next_instruction()
-                interleaved_trace.add(instruction)
+                if not isinstance(instruction, tr.Trace.Barrier):
+                    interleaved_trace.add(instruction)
                 if isinstance(instruction, tr.Trace.Fission):
                     newly_active.append(instruction.new_bot_id)
                 elif isinstance(instruction, tr.Trace.FusionS):

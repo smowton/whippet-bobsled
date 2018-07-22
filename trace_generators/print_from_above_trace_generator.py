@@ -5,12 +5,13 @@ import simple_move
 
 class PrintFromAboveTraceBuilder:
 
-    def __init__(self, model, make_complete_trace = True):
+    def __init__(self, model, make_complete_trace = True, lockstep = False):
         self.pos = (0, 0, 0)
         self.trace = tr.Trace()
         self.model = model
         self.region_size = (len(self.model), len(self.model[0]), len(self.model[0, 0]))
         self.make_complete_trace = make_complete_trace
+        self.lockstep = lockstep
 
     # No clipping yet, as the bot is always above all filled cells.
     def move_to(self, new_pos):
@@ -50,6 +51,9 @@ class PrintFromAboveTraceBuilder:
                         to_target = self.difference_to((x, y, z))
 
                     self.trace.add(tr.Trace.Fill(to_target, (x, y, z)))
+
+            if self.lockstep:
+                self.trace.add(tr.Trace.Barrier())
 
         if self.make_complete_trace:
             self.move_to((0, 0, 0))
