@@ -133,13 +133,14 @@ class Trace:
             return 0 # Always grouped with FusionP, which pays the (negative) cost
 
     class Fission(Instruction):
-        def __init__(self, distance, seeds_kept):
+        def __init__(self, distance, seeds_given, new_bot_id):
             self.distance = distance
-            self.seeds_kept = seeds_kept
+            self.seeds_given = seeds_given
+            self.new_bot_id = new_bot_id # Not serialized, just useful to know
             assert is_near_difference(distance)
         def serialize(self, stream):
             stream.write(chr(0b00000101 | (ser.get_near_difference_encoding(self.distance) << 3)))
-            stream.write(chr(self.seeds_kept))
+            stream.write(chr(self.seeds_given))
         def cost(self):
             return 24
 
