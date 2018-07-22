@@ -202,16 +202,18 @@ def path_to_commands(lines):
         distance = lines[index][0] - moved
         # Not the last line, and the next two lines are a short distance
         if index < len(lines) - 1 and distance <= 5 and lines[index + 1][0] <= 5:
-            commands.append(('L move', (distance, lines[index][1]), lines[index + 1]))
+            lmove1 = trace.coord_scalar_multiply(lines[index][1], distance)
+            lmove2 = trace.coord_scalar_multiply(lines[index + 1][1], lines[index + 1][0])
+            commands.append(trace.Trace.LMove(lmove1, lmove2))
             index += 2
             moved = 0
         # The next line is within a long distance
         elif distance <= 15:
-            commands.append(('S move', (distance, lines[index][1])))
+            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(lines[index][1], distance)))
             index += 1
             moved = 0
         # The next line longer than a long distance
         else:
-            commands.append(('S move', (15, lines[index][1])))
+            commands.append(trace.Trace.SMove(trace.coord_scalar_multiply(lines[index][1], 15)))
             moved += 15
     return commands
