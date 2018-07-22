@@ -156,14 +156,8 @@ class Trace:
             return 0 # Always grouped with FusionP, which pays the (negative) cost
 
         def execute(self, state):
-            fusionPs = state.fusionPs
-            if len(fusionPs) == 0:
-                return "Attempted FusionS without preceding fusionP"
-            target_position = deepcopy(state.current_bot.position).add_offset(self.distance)
-            matchingFusionPs = filter(lambda fusionP: fusionP.bot.position == target_position, fusionPs)
-            if len(matchingFusionPs) != 0:
-                return "Attempted to FusionS without preceding fusionP for bot in matching position"
-
+            self.bot = state.current_bot
+            state.fusionSs.append(self)
             return ""
 
 
@@ -291,11 +285,12 @@ class Trace:
 
         for trace_index in range(len(instructions)):
             execution_error = instructions[trace_index].execute(state)
+            if execution_error == "":
+                execution_error = state.select_next_bot()
             if execution_error != "":
                 print("Error at instruction " + str(trace_index) + ".")
                 print(execution_error)
                 return state, False
-            state.select_next_bot()
 
         valid = True
         if len(state.bots) != 1:
