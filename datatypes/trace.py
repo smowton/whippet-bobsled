@@ -179,26 +179,6 @@ class Trace:
             return ""
 
     class Void(Instruction):
-        def __init__(self, distance):
-            self.distance = distance
-            assert is_near_difference(distance)
-
-        def serialize(self, stream):
-            stream.write(chr(0b00000010 | (ser.get_near_difference_encoding(self.distance) << 3)))
-
-        def cost(self):
-            return 12 # Assumes we currently never fill a filled space
-
-        def execute(self, state):
-            bot = state.current_bot
-            position_to_fill = deepcopy(bot.position).add_offset(self.distance)
-            existing_contents = state.contents_of_position(position_to_fill)
-            if existing_contents != "":
-                return "Attempted to fill to voxel which " + existing_contents
-            state.current_model[position_to_fill.x, position_to_fill.y, position_to_fill.z] = True
-            return ""
-
-    class Void(Instruction):
         def __init__(self, distance, absolute_coord = None):
             self.distance = distance
             self.absolute_coord = absolute_coord # advisory only, not serialized.
