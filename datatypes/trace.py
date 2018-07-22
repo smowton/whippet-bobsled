@@ -211,14 +211,15 @@ class Trace:
             if execution_error != "":
                 print("Error at instruction " + str(trace_index) + ".")
                 print(execution_error)
-                return False
+                return state, False
             state.select_next_bot()
             trace_index += 1
 
         if len(state.bots) != 1:
             print("Final bot count is not 1.")
-            return False
+            return state, False
         if state.current_bot.position.x != 0 or state.current_bot.position.y != 0 or state.current_bot.position.z != 0:
             print("Final bot positon is not (0,0,0)")
-            return False
+            return state, False
+
         return (state, numpy.array_equal(target_model, state.current_model))
