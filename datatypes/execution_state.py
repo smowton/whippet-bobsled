@@ -19,6 +19,8 @@ class Voxel_position:
             self.z = z
 
     def add_offset(self, other):
+        if isinstance(other, tuple):
+            return self.add_offset(Voxel_position(other))
         self.x += other.x
         self.y += other.y
         self.z += other.z
@@ -44,19 +46,22 @@ class Execution_state:
     def current_bot(self):
         return self.bots[self.current_bot_index]
 
+    def position_in_bounds(self, position):
+        return position.x >= 0 and \
+               position.y >= 0 and \
+               position.z >= 0 and \
+               position.x < self.dimension and \
+               position.y < self.dimension and \
+               position.z < self.dimension
+
     def contents_of_position(self, position):
-        if (self.current_model[position.x, position.y, position.z]):
+        if self.current_model[position.x, position.y, position.z]:
             return "is filled"
         if position in map(lambda bot: bot.position, self.bots):
             return "contains a bot"
         if position in self.volatiles:
-            return "is volitile"
-        if position.x < 0 or \
-           position.y < 0 or \
-           position.z < 0 or \
-           position.x >= self.dimension or \
-           position.y >= self.dimension or \
-           position.z >= self.dimension:
+            return "is volatile"
+        if not self.position_in_bounds(position):
             return "is out of bounds"
         return ""
 

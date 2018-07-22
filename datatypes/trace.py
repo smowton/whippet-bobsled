@@ -78,9 +78,9 @@ class Trace:
 
         def execute(self, state):
             state.add_volatile(state.current_bot.position)
-            new_position = deepcopy(state.current_bot.position).add_offset(execution_state.Voxel_position(self.distance))
+            new_position = deepcopy(state.current_bot.position).add_offset(self.distance)
             existing_contents = state.contents_of_position(new_position)
-            if(existing_contents != ""):
+            if existing_contents != "":
                 return "Attempted to move bot to voxel which " + existing_contents
             state.current_bot.position = new_position
             return ""
@@ -106,10 +106,10 @@ class Trace:
 
         def execute(self, state):
             state.add_volatile(state.current_bot.position)
-            new_position = deepcopy(state.current_bot.position).add_offset(execution_state.Voxel_position(self.distance1))
-            new_position = new_position.add_offset(execution_state.Voxel_position(self.distance2))
+            new_position = deepcopy(state.current_bot.position).add_offset(self.distance1)
+            new_position = new_position.add_offset(self.distance2)
             existing_contents = state.contents_of_position(new_position)
-            if(existing_contents != ""):
+            if existing_contents != "":
                 return "Attempted to move bot to voxel which " + existing_contents
             state.current_bot.position = new_position
             return ""
@@ -147,10 +147,21 @@ class Trace:
         def __init__(self, distance):
             self.distance = distance
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000011 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
         def cost(self):
             return 12 # Assumes we currently never fill a filled space
+
+        def execute(self, state):
+            bot = state.current_bot
+            position_to_fill = deepcopy(bot.position).add_offset(self.distance)
+            existing_contents = state.contents_of_position(position_to_fill)
+            if existing_contents != "":
+                return "Attempted to fill to voxel which " + existing_contents
+            state.current_model[position_to_fill.x, position_to_fill.y, position_to_fill.z] = True
+            return ""
 
     def __init__(self):
         self.instructions = []
@@ -203,4 +214,4 @@ class Trace:
             state.select_next_bot()
             trace_index += 1
 
-        return numpy.array_equal(target_model, state.current_model)
+        return (state, numpy.array_equal(target_model, state.current_model))
