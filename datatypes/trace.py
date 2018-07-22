@@ -202,6 +202,7 @@ class Trace:
         dimension = target_model.shape[0]
         state = execution_state.Execution_state(dimension)
         trace_index = 0
+        state.current_bot.seeds = 39
 
         while trace_index < len(self.instructions):
 
@@ -214,4 +215,10 @@ class Trace:
             state.select_next_bot()
             trace_index += 1
 
+        if len(state.bots) != 1:
+            print("Final bot count is not 1.")
+            return False
+        if state.current_bot.position.x != 0 or state.current_bot.position.y != 0 or state.current_bot.position.z != 0:
+            print("Final bot positon is not (0,0,0)")
+            return False
         return (state, numpy.array_equal(target_model, state.current_model))
