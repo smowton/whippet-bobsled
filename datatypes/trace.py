@@ -215,11 +215,15 @@ class Trace:
             state.select_next_bot()
             trace_index += 1
 
+        valid = True
         if len(state.bots) != 1:
             print("Final bot count is not 1.")
-            return state, False
-        if state.current_bot.position.x != 0 or state.current_bot.position.y != 0 or state.current_bot.position.z != 0:
+            valid = False
+        elif state.current_bot.position.x != 0 or state.current_bot.position.y != 0 or state.current_bot.position.z != 0:
             print("Final bot positon is not (0,0,0)")
-            return state, False
+            valid = False
+        if not numpy.array_equal(target_model, state.current_model):
+            print("Final model does not match target model")
+            valid = False
 
-        return (state, numpy.array_equal(target_model, state.current_model))
+        return state, valid
