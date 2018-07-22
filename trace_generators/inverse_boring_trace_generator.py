@@ -3,7 +3,7 @@ import numpy
 import datatypes.trace as tr
 import simple_move
 
-class SimpleTraceBuilder:
+class InverseBoringTraceBuilder:
 
     def __init__(self, model):
         self.num_ungrounded_blocks = 0
@@ -14,7 +14,6 @@ class SimpleTraceBuilder:
         self.model = model
         self.partial_model = numpy.zeros((self.resolution, self.resolution, self.resolution), bool)
 
-    # No clipping yet, as the bot is always above all filled cells.
     def move_to(self, new_pos):
 
         needed = self.difference_to(new_pos)
@@ -146,8 +145,8 @@ class SimpleTraceBuilder:
         self.move_to((0, 0, 0))
         self.trace.add(tr.Trace.Halt())
 
-def build_simple_trace(model):
+def build_inverse_boring_trace(model):
 
-    builder = SimpleTraceBuilder(model)
+    builder = InverseBoringTraceBuilder(model)
     builder.make()
     return builder.trace

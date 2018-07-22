@@ -5,11 +5,11 @@ import sys
 import os.path
 
 import model_reader.model_reader as mdl
-import trace_generators.simple_trace_generator as gen
+import trace_generators.inverse_boring_trace_generator as gen
 import serialize_trace.serializer as ser
 
 if len(sys.argv) < 3:
-    print("Usage: make_simple_trace.py some.mdl some.nbt [-f]", file = sys.stderr)
+    print("Usage: make_inverse_boring_trace.py some.mdl some.nbt [-f]", file = sys.stderr)
     sys.exit(1)
 
 if (len(sys.argv) >= 4 and sys.argv[3] != '-f') or os.path.exists(sys.argv[2]):
@@ -17,7 +17,7 @@ if (len(sys.argv) >= 4 and sys.argv[3] != '-f') or os.path.exists(sys.argv[2]):
     sys.exit(1)
 
 model = mdl.read(sys.argv[1])
-trace = gen.build_simple_trace(model)
+trace = gen.build_inverse_boring_trace(model)
 
 with open(sys.argv[2], "w") as f:
     ser.serialize(trace, f)
