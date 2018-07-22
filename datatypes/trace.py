@@ -130,20 +130,36 @@ class Trace:
             self.distance = distance
             self.target_bot = target_bot
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000111 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
         def cost(self):
             return -24
+
+        def execute(self, state):
+            self.bot = state.current_bot
+            state.fusionPs.append(self)
+            return ""
+
 
     class FusionS(Instruction):
         def __init__(self, distance, target_bot = None):
             self.distance = distance
             self.target_bot = target_bot
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000110 | (ser.get_near_difference_encoding(self.distance) << 3)))
+
         def cost(self):
             return 0 # Always grouped with FusionP, which pays the (negative) cost
+
+        def execute(self, state):
+            self.bot = state.current_bot
+            state.fusionSs.append(self)
+            return ""
+
 
     class Fission(Instruction):
         def __init__(self, distance, seeds_given, new_bot_id = None):
@@ -151,11 +167,38 @@ class Trace:
             self.seeds_given = seeds_given
             self.new_bot_id = new_bot_id # Not serialized, just useful to know
             assert is_near_difference(distance)
+
         def serialize(self, stream):
             stream.write(chr(0b00000101 | (ser.get_near_difference_encoding(self.distance) << 3)))
             stream.write(chr(self.seeds_given))
+
         def cost(self):
             return 24
+
+        def execute(self, state):
+            # Check positions
+            state.add_volatile(state.current_bot.position)
+            new_bot_position = deepcopy(state.current_bot.position).add_offset(self.distance)
+            existing_contents = state.contents_of_position(new_bot_position)
+            if existing_contents != "":
+                return "Attempted create bot in voxel which " + existing_contents
+            # Check seeds
+            old_seeds = state.current_bot.seeds
+            #if self.seeds_given > len(old_seeds):
+            #    return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot when current bot only holds " + str(old_seeds) + " seeds."
+            if len(old_seeds) == 0:
+                return "Fission attempted from bot holding 0 seeds."
+            # if self.seeds_given < 1:
+            #     return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot, must give at lease one seed."
+            # Do the thing
+            state.current_bot.seeds = old_seeds[self.seeds_given+1:]
+            new_bot = execution_state.Bot()
+            new_bot.id = old_seeds[0]
+            new_bot.seeds = old_seeds[1:self.seeds_given+1]
+            new_bot.position = new_bot_position
+            state.add_bot(new_bot)
+            return ""
+
 
     class Fill(Instruction):
         def __init__(self, distance, absolute_coord = None):
@@ -237,15 +280,17 @@ class Trace:
         instructions = numpy.array(self.instructions)
         dimension = target_model.shape[0]
         state = execution_state.Execution_state(dimension)
-        state.current_bot.seeds = 39
+        state.current_bot.id = 0
+        state.current_bot.seeds = range(1, 40)
 
         for trace_index in range(len(instructions)):
             execution_error = instructions[trace_index].execute(state)
+            if execution_error == "":
+                execution_error = state.select_next_bot()
             if execution_error != "":
                 print("Error at instruction " + str(trace_index) + ".")
                 print(execution_error)
                 return state, False
-            state.select_next_bot()
 
         valid = True
         if len(state.bots) != 1:
