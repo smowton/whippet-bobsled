@@ -6,6 +6,7 @@
 import simple_move as move
 import print_from_above_trace_generator as pfa
 import datatypes.trace as tr
+import trace_transforms.opportunistic_antigrav as opportunistic_ag
 
 def equal_split_indices(histogram, nsplits):
     total = sum(histogram)
@@ -172,7 +173,6 @@ def build_parallel_trace(model):
 
     bots = [None for i in range(40)]
     bots[0] = Bot(toplevel_split_ops, (0, 0, 0), (6, 1, 6), (0, 0, 0), range(1, 40), bots, (split_points_x, [], split_points_z))
-    bots[0].trace.add(tr.Trace.Flip())
     bots[0].make_init_trace()
 
     for (idx, b) in enumerate(bots):
@@ -243,8 +243,20 @@ def build_parallel_trace(model):
         bot.trace.instructions.extend(simple_trace_gen.trace.instructions)
 
     # Final shutdown by whichever bot ended up running the origin region:
-    bots[bots_by_origin[(0,0,0)]].trace.add(tr.Trace.Flip())
     bots[bots_by_origin[(0,0,0)]].trace.add(tr.Trace.Halt())
+
+    # The bots' traces include advisory absolute coordinates on their Fill instructions.
+    # Before doing the interleave, make them absolute:
+
+    for b in bots:
+        if b is None:
+            continue
+        origin_in_voxels = (split_points_x[b.region_origin[0]], 0, split_points_z[b.region_origin[2]])
+        for instruction in b.trace.instructions:
+            if isinstance(instruction, tr.Trace.Fill):
+                instruction.absolute_coord = tr.coord_add(origin_in_voxels, instruction.absolute_coord)
+
+    # Interleave the traces:
 
     class TraceWalker:
         def __init__(self, idx, bot):
@@ -318,5 +330,7 @@ def build_parallel_trace(model):
             walkers[new_bot].activate()
         for dead_bot in newly_inactive:
             walkers[dead_bot].deactivate()
+
+    interleaved_trace = opportunistic_ag.add_flips(interleaved_trace, res)
 
     return interleaved_trace

@@ -49,7 +49,7 @@ class PrintFromAboveTraceBuilder:
                         self.move_to((x, y + 1, z))
                         to_target = self.difference_to((x, y, z))
 
-                    self.trace.add(tr.Trace.Fill(to_target))
+                    self.trace.add(tr.Trace.Fill(to_target, (x, y, z)))
 
         if self.make_complete_trace:
             self.move_to((0, 0, 0))

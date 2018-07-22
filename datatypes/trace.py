@@ -158,8 +158,9 @@ class Trace:
             return 24
 
     class Fill(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, absolute_coord = None):
             self.distance = distance
+            self.absolute_coord = absolute_coord # advisory only, not serialized.
             assert is_near_difference(distance)
 
         def serialize(self, stream):
