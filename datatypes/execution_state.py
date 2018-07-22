@@ -30,13 +30,15 @@ class Voxel_position:
 class Bot:
     def __init__(self):
         self.position = Voxel_position()
-        self.seeds = 0
+        self.seeds = []
+        self.id = 0
 
 
 class Execution_state:
     def __init__(self, dimension):
         self.dimension = dimension
         self.bots = [Bot()]
+        self.new_bots = []
         self.current_bot_index = 0
         self.current_model = numpy.zeros((dimension, dimension, dimension), bool)
         self.antigrav = False
@@ -71,10 +73,17 @@ class Execution_state:
         if self.current_bot_index >= len(self.bots):
             self.current_bot_index = 0
             self.volatiles = []
+            self.bots += self.new_bots
+            self.new_bots = []
+            self.bots.sort(key = lambda bot: bot.id)
 
     def add_volatile(self, volatile):
         self.volatiles.append(deepcopy(volatile))
 
-    def add_bot(self, bot):
-        # This is the wrong thing to do, because gaps from fusions are actually used first.
-        self.bots.append(bot)
+    def add_bot(self, new_bot):
+        self.new_bots.append(new_bot)
+        # current_bot_id = self.current_bot.id
+        # self.bots.append(new_bot)
+        # self.bots.sort(key = lambda bot: bot.id)
+        # if current_bot_id > new_bot.id:
+        #     self.current_bot_index += 1

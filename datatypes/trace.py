@@ -190,15 +190,19 @@ class Trace:
                 return "Attempted create bot in voxel which " + existing_contents
             # Check seeds
             old_seeds = state.current_bot.seeds
-            if self.seeds_given > old_seeds:
-                return "Fusion attempted to give " + str(self.seeds_given) + " seeds to new bot when current bot only holds " + str(old_seeds) + " seeds."
+            #if self.seeds_given > len(old_seeds):
+            #    return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot when current bot only holds " + str(old_seeds) + " seeds."
+            if len(old_seeds) == 0:
+                return "Fission attempted from bot holding 0 seeds."
             if self.seeds_given < 1:
-                return "Fusion attempted to give " + str(self.seeds_given) + " seeds to new bot, must give at lease one seed."
+                return "Fission attempted to give " + str(self.seeds_given) + " seeds to new bot, must give at lease one seed."
             # Do the thing
-            state.current_bot.seeds = old_seeds - self.seeds_given
+            state.current_bot.seeds = old_seeds[self.seeds_given:]
             new_bot = execution_state.Bot()
-            new_bot.seeds = self.seeds_given - 1
+            new_bot.id = old_seeds[0]
+            new_bot.seeds = old_seeds[1:self.seeds_given]
             new_bot.position = new_bot_position
+            state.add_bot(new_bot)
             return ""
 
 
@@ -282,7 +286,8 @@ class Trace:
         instructions = numpy.array(self.instructions)
         dimension = target_model.shape[0]
         state = execution_state.Execution_state(dimension)
-        state.current_bot.seeds = 39
+        state.current_bot.id = 0
+        state.current_bot.seeds = range(1, 40)
 
         for trace_index in range(len(instructions)):
             execution_error = instructions[trace_index].execute(state)
