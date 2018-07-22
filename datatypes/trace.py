@@ -280,14 +280,25 @@ class Trace:
 
         return total_cost
 
-    def validate(self, target_model):
+    def validate(self, target_model = None, source_model = None):
+        assert(target_model is not None or source_model is not None)
+
         # Convert instruction list field to local array for speed.
         instructions = numpy.array(self.instructions)
-        dimension = target_model.shape[0]
+
+        # Setup state
+        if target_model is not None:
+            dimension = target_model.shape[0]
+        else:
+            dimension = source_model.shape[0]
+            target_model = numpy.zeros((dimension, dimension, dimension), bool)
         state = execution_state.Execution_state(dimension)
+        if source_model is not None:
+            state.current_model = source_model
         state.current_bot.id = 0
         state.current_bot.seeds = range(1, 40)
 
+        # execute instructions
         for trace_index in range(len(instructions)):
             execution_error = instructions[trace_index].execute(state)
             if execution_error == "":
@@ -297,6 +308,7 @@ class Trace:
                 print(execution_error)
                 return state, False
 
+        # Check final state
         valid = True
         if len(state.bots) != 1:
             print("Final bot count is not 1.")
