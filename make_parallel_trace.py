@@ -9,10 +9,11 @@ import trace_generators.parallel_trace_generator as gen
 import serialize_trace.serializer as ser
 
 if len(sys.argv) < 3:
-    print("Usage: make_parallel_trace.py some.mdl some.nbt [-f] [--lockstep]", file = sys.stderr)
+    print("Usage: make_parallel_trace.py some.mdl some.nbt [-f] [--lockstep] [--sort-tiers]", file = sys.stderr)
     sys.exit(1)
 
 lockstep = "--lockstep" in sys.argv
+sort_tiers = "--sort-tiers" in sys.argv
 overwrite = "-f" in sys.argv
 
 if os.path.exists(sys.argv[2]) and not overwrite:
@@ -20,7 +21,7 @@ if os.path.exists(sys.argv[2]) and not overwrite:
     sys.exit(1)
 
 model = mdl.read(sys.argv[1])
-trace = gen.build_parallel_trace(model, lockstep)
+trace = gen.build_parallel_trace(model, lockstep, sort_tiers)
 
 with open(sys.argv[2], "w") as f:
     ser.serialize(trace, f)

@@ -5,6 +5,7 @@
 
 import simple_move as move
 import print_from_above_trace_generator as pfa
+import sorting_print_from_above_trace_generator as spfa
 import datatypes.trace as tr
 import trace_transforms.opportunistic_antigrav as opportunistic_ag
 
@@ -162,7 +163,7 @@ class Bot:
         # Finally for simplicity move to the origin of my region:
         move.move(tr.coord_subtract((0, 0, 0), self.pos), self.trace)
 
-def build_parallel_trace(model, lockstep):
+def build_parallel_trace(model, lockstep, sort_tiers):
 
     res = len(model)
 
@@ -197,7 +198,10 @@ def build_parallel_trace(model, lockstep):
         submodel = model[x_range_voxels, 0 : res, z_range_voxels]
 
         # Add build instructions for this region:
-        simple_trace_gen = pfa.PrintFromAboveTraceBuilder(submodel, False, lockstep)
+        if not sort_tiers:
+            simple_trace_gen = pfa.PrintFromAboveTraceBuilder(submodel, False, lockstep)
+        else:
+            simple_trace_gen = spfa.SortingPrintFromAboveTraceBuilder(submodel, False, lockstep)
         simple_trace_gen.make()
 
         # After the usual build process, go to the ceiling:
