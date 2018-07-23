@@ -2,8 +2,8 @@
 import datatypes.trace as tr
 import trace_generators.parallel_trace_generator as gen
 
-def build_trace(model):
-    trace = gen.build_parallel_trace(model)
+def build_trace(model, lockstep, sort_tiers):
+    trace = gen.build_parallel_trace(model, lockstep, sort_tiers)
 
     bots = {0: 39}
     active_bots = [0]
