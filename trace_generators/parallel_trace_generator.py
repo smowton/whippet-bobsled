@@ -52,7 +52,8 @@ def split_by_equal_matter(model, xsplits, zsplits):
     return (xresult, zresult)
 
 class Bot:
-    def __init__(self, split_ops_queue, region_origin, region_size, pos, seeds, bots, split_points):
+    def __init__(self, id, split_ops_queue, region_origin, region_size, pos, seeds, bots, split_points):
+        self.id = id
         self.trace = tr.Trace()
         self.split_ops_queue = split_ops_queue
         self.region_origin = region_origin
@@ -112,7 +113,7 @@ class Bot:
             new_bot_id = self.seeds[0]
             fission_place = [0,0,0]
             fission_place[split_ax] = split_sign
-            self.trace.add(tr.Trace.Fission(tuple(fission_place), give_seeds, new_bot_id))
+            self.trace.add(tr.Trace.Fission(tuple(fission_place), give_seeds, self.id, new_bot_id))
 
             # Configure the new bot!
             new_bot_split_ops = self.split_ops_queue[1:]
@@ -155,7 +156,7 @@ class Bot:
             self.seeds = self.seeds[(give_seeds + 1):]
 
             self.bots[new_bot_id] = \
-                Bot(new_bot_split_ops, tuple(new_bot_region_origin), tuple(new_bot_region_size), tuple(new_bot_pos), new_bot_seeds, self.bots, self.split_points)
+                Bot(new_bot_id, new_bot_split_ops, tuple(new_bot_region_origin), tuple(new_bot_region_size), tuple(new_bot_pos), new_bot_seeds, self.bots, self.split_points)
             self.bots[new_bot_id].make_init_trace()
 
             self.split_ops_queue = self.split_ops_queue[1:]
@@ -173,7 +174,7 @@ def build_parallel_trace(model, lockstep, sort_tiers):
     toplevel_split_ops = ["x/2", "z/2", "x2:1", "z2:1", "x/2", "z/2"]
 
     bots = [None for i in range(40)]
-    bots[0] = Bot(toplevel_split_ops, (0, 0, 0), (6, 1, 6), (0, 0, 0), range(1, 40), bots, (split_points_x, [], split_points_z))
+    bots[0] = Bot(0, toplevel_split_ops, (0, 0, 0), (6, 1, 6), (0, 0, 0), range(1, 40), bots, (split_points_x, [], split_points_z))
     bots[0].make_init_trace()
 
     for (idx, b) in enumerate(bots):
@@ -214,7 +215,7 @@ def build_parallel_trace(model, lockstep, sort_tiers):
             simple_trace_gen.move_to((region_width_in_voxels - 1, res - 1, 0))
             target_bot = bots_by_origin[(bot.region_origin[0] + 1, 0, bot.region_origin[2])]
             # This instruction will be properly synchronised later.
-            simple_trace_gen.trace.instructions.append(tr.Trace.FusionP((1, 0, 0), target_bot))
+            simple_trace_gen.trace.instructions.append(tr.Trace.FusionP((1, 0, 0), bot.id, target_bot))
 
         # If this isn't the leftmost bot, go to the back-right corner to get picked up:
         if bot.region_origin[0] != 0:
@@ -230,7 +231,7 @@ def build_parallel_trace(model, lockstep, sort_tiers):
             simple_trace_gen.move_to((0, res - 1, region_depth_in_voxels - 1))
             target_bot = bots_by_origin[(bot.region_origin[0], 0, bot.region_origin[2] + 1)]
             # This instruction will be properly synchronised later.
-            simple_trace_gen.trace.instructions.append(tr.Trace.FusionP((0, 0, 1), target_bot))
+            simple_trace_gen.trace.instructions.append(tr.Trace.FusionP((0, 0, 1), bot.id, target_bot))
 
         # If this isn't the frontmost bot, go to the front corner to get picked up:
         if bot.region_origin[2] != 0:

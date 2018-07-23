@@ -126,8 +126,9 @@ class Trace:
             return ""
 
     class FusionP(Instruction):
-        def __init__(self, distance, target_bot = None):
+        def __init__(self, distance, primary_bot = None, target_bot = None):
             self.distance = distance
+            self.primary_bot = primary_bot
             self.target_bot = target_bot
             assert is_near_difference(distance)
 
@@ -162,9 +163,10 @@ class Trace:
 
 
     class Fission(Instruction):
-        def __init__(self, distance, seeds_given, new_bot_id = None):
+        def __init__(self, distance, seeds_given, old_bot_id = None, new_bot_id = None):
             self.distance = distance
             self.seeds_given = seeds_given
+            self.old_bot_id = old_bot_id # Not serialized, just useful to know
             self.new_bot_id = new_bot_id # Not serialized, just useful to know
             assert is_near_difference(distance)
 
