@@ -47,24 +47,30 @@ class Trace:
             return ""
 
     class Halt(Instruction):
-        def __init__(self):
-            pass
+        def __init__(self, bot_id = None):
+            self.bot_id = bot_id
+        def __repr__(self):
+            return "Halt #{0}".format(self.bot_id)
         def serialize(self, stream):
             stream.write(chr(0b11111111))
         def cost(self):
             return 0
 
     class Wait(Instruction):
-        def __init__(self):
-            pass
+        def __init__(self, bot_id = None):
+            self.bot_id = bot_id
+        def __repr__(self):
+            return "Wait #{0}".format(self.bot_id)
         def serialize(self, stream):
             stream.write(chr(0b11111110))
         def cost(self):
             return 0
 
     class Flip(Instruction):
-        def __init__(self):
-            pass
+        def __init__(self, bot_id = None):
+            self.bot_id = bot_id
+        def __repr__(self):
+            return "Flip #{0}".format(self.bot_id)
         def serialize(self, stream):
             stream.write(chr(0b11111101))
         def cost(self):
@@ -74,15 +80,25 @@ class Trace:
             return ""
 
     class SMove(Instruction):
-        def __init__(self, distance):
+        def __init__(self, distance, bot_id=None):
             self.distance = distance
+            self.bot_id = bot_id
             assert is_long_linear_difference(distance)
+
+        def __repr__(self):
+            return "Straight-move #{0}, distance: {1}".format(self.bot_id, self.distance)
 
         def serialize(self, stream):
             ax = ser.get_linear_axis(self.distance)
             mag = ser.get_long_linear_biased_magnitude(self.distance)
             stream.write(chr(0b00000100 | (ax << 4)))
             stream.write(chr(mag))
+
+        def get_distance(self):
+            return self.distance
+
+        def get_path(self):
+            return [self.distance]
 
         def cost(self):
             return 2 * l1norm(self.distance)
@@ -98,11 +114,15 @@ class Trace:
 
 
     class LMove(Instruction):
-        def __init__(self, distance1, distance2):
+        def __init__(self, distance1, distance2, bot_id = None):
             self.distance1 = distance1
             self.distance2 = distance2
+            self.bot_id = bot_id
             assert is_short_linear_difference(distance1)
             assert is_short_linear_difference(distance2)
+
+        def __repr__(self):
+            return "L-move #{0}, distance1: {1}, distance2: {2}".format(self.bot_id, self.distance1, self.distance2)
 
         def serialize(self, stream):
             ax1 = ser.get_linear_axis(self.distance1)
@@ -111,6 +131,12 @@ class Trace:
             mag2 = ser.get_short_linear_biased_magnitude(self.distance2)
             stream.write(chr(0b00001100 | (ax2 << 6) | (ax1 << 4)))
             stream.write(chr((mag2 << 4) | mag1))
+
+        def get_distance(self):
+            return coord_add(self.distance1, self.distance2)
+
+        def get_path(self):
+            return [self.distance1, self.distance2]
 
         def cost(self):
             return (2 * (l1norm(self.distance1) + l1norm(self.distance2) + 2))
@@ -163,12 +189,15 @@ class Trace:
 
 
     class Fission(Instruction):
-        def __init__(self, distance, seeds_given, old_bot_id = None, new_bot_id = None):
+        def __init__(self, distance, seeds_given, bot_id = None, new_bot_id = None):
             self.distance = distance
             self.seeds_given = seeds_given
-            self.old_bot_id = old_bot_id # Not serialized, just useful to know
+            self.bot_id = bot_id # Not serialized, just useful to know
             self.new_bot_id = new_bot_id # Not serialized, just useful to know
             assert is_near_difference(distance)
+
+        def __repr__(self):
+            return "Fission #{0}, new_bot_id: {1} distance: {2}, seeds_given: {3}".format(self.bot_id, self.new_bot_id, self.distance, self.seeds_given)
 
         def serialize(self, stream):
             stream.write(chr(0b00000101 | (ser.get_near_difference_encoding(self.distance) << 3)))
@@ -203,10 +232,14 @@ class Trace:
 
 
     class Fill(Instruction):
-        def __init__(self, distance, absolute_coord = None):
+        def __init__(self, distance, absolute_coord = None, bot_id = None):
             self.distance = distance
+            self.bot_id = bot_id
             self.absolute_coord = absolute_coord # advisory only, not serialized.
             assert is_near_difference(distance)
+
+        def __repr__(self):
+            return "Fill #{0}, distance: {1}".format(self.bot_id, self.distance)
 
         def serialize(self, stream):
             stream.write(chr(0b00000011 | (ser.get_near_difference_encoding(self.distance) << 3)))

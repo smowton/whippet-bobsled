@@ -1,14 +1,14 @@
+import sys
+
 import model_reader.model_reader as model_reader
 import model_reader.model_functions as model_functions
+import trace_generators.layer_floodfill_generator as layer_floodfill_generator
+import serialize_trace.serializer as serializer
+import bot_locomotion.pathfinding as pathfinding
 
-grid = model_reader.read('./data/problems/LA001_tgt.mdl')
+model = model_reader.read('./data/problems/FA047_tgt.mdl')
 
-slice = grid[:, :, 1]
-model_reader.dump_slice(slice)
-print( model_functions.slice_is_empty(slice) )
+commands = layer_floodfill_generator.build_trace(model)
 
-slice = grid[:, :, 19]
-model_reader.dump_slice(slice)
-print( model_functions.slice_is_empty(slice) )
-
-print(model_functions.bounds(grid))
+with open(sys.argv[1], "w") as f:
+    serializer.serialize(commands, f)

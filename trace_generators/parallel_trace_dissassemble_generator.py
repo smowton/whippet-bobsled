@@ -19,7 +19,7 @@ def build_trace(model, lockstep, sort_tiers):
             del bots[command.target_bot]
         elif isinstance(command, tr.Trace.Fission):
             bots[command.new_bot_id] = command.seeds_given
-            bots[command.old_bot_id] -= command.seeds_given + 1
+            bots[command.bot_id] -= command.seeds_given + 1
 
         step.append((command, active_bots[len(step)], fusion_seeds))
         if len(step) == len(active_bots):

@@ -1,5 +1,8 @@
 import sys
 import numpy
+import datatypes.trace as trace
+
+add = trace.coord_add
 
 def slice_is_empty(slice):
     resolution = slice.shape[0]
@@ -75,3 +78,70 @@ def fillable(goal_grid, current_grid):
                     elif z<resolution-1 and current_grid[x, y, z + 1]:
                         fillable_voxels[x, y, z] = True
     return fillable_voxels
+
+lateral_directions = [
+    (0, 0, 1),
+    (1, 0, 0),
+    (0, 0, -1),
+    (-1, 0, 0),
+]
+
+directions = lateral_directions + [
+    (0, 1, 0),
+    (0, -1, 0),
+]
+
+def layer_to_set(layer, y):
+    layer_set = set()
+    for x in range(layer.shape[0]):
+        for z in range(layer.shape[1]):
+            if layer[x, z]:
+                layer_set.add((x, y, z))
+    return layer_set
+
+def get_next_layer(grid, layer_height, prev_layer, explored):
+    layer_data = grid[:, layer_height, :]
+    layer = []
+
+    # Get grounded points that are directly on top of existing points
+    for point in prev_layer:
+        new_point = (point[0], layer_height, point[2])
+        if layer_data[new_point[0], new_point[2]] and new_point not in explored:
+            layer.append(new_point)
+            explored.add(new_point)
+
+    # Progressively add all points that touch grounded points
+    for point in layer:
+        for direction in lateral_directions:
+            adjacent_point = add(point, direction)
+            if layer_data[adjacent_point[0], adjacent_point[2]] and adjacent_point not in explored:
+                layer.append(adjacent_point)
+                explored.add(adjacent_point)
+
+    return set(layer)
+
+def get_floodfill_layers(grid):
+    base_layer = layer_to_set(grid[:, 0, :], 0)
+    layers = [(base_layer, 0, [])]
+    explored = base_layer.copy()
+    open_layers = [0]
+    new_layer_index = 1
+
+    for layer_index in open_layers:
+        layer_height = layers[layer_index][1]
+
+        upper_layer = get_next_layer(grid, layer_height + 1, layers[layer_index][0], explored)
+        if len(upper_layer) > 0:
+            layers[layer_index][2].append(new_layer_index)
+            layers.append((upper_layer, layer_height + 1, []))
+            open_layers.append(new_layer_index)
+            new_layer_index += 1
+
+        lower_layer = get_next_layer(grid, layer_height - 1, layers[layer_index][0], explored)
+        if len(lower_layer) > 0:
+            layers[layer_index][2].append(new_layer_index)
+            layers.append((lower_layer, layer_height - 1, []))
+            open_layers.append(new_layer_index)
+            new_layer_index += 1
+
+    return layers
