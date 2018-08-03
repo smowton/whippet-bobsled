@@ -406,9 +406,9 @@ class Bot:
                 commands = None
 
         if not commands:
-            path = pathfinding.quick_overhead_search(self.position, goal, self.world.is_occupied_bots)
+            path = pathfinding.quick_around_search(self.position, goal, self.world.is_occupied_bots)
             # if not path:
-            #     path = pathfinding.quick_overhead_search(self.position, goal, self.world.is_occupied_state)
+            #     path = pathfinding.quick_around_search(self.position, goal, self.world.is_occupied_state)
             if not path:
                 print '!PATHFINDING!', self.position, goal
                 path = pathfinding.bounded_search(self.position, goal, self.world.model.shape, self.world.is_occupied_bots, self.world.bounds if bounded else None)

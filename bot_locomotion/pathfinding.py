@@ -96,37 +96,38 @@ def quick_search(start, goal, is_occupied):
             return lines
     return None
 
-def quick_overhead_search(start, goal, is_occupied):
+def quick_around_search(start, goal, is_occupied):
     diff = trace.coord_subtract(goal, start)
     components = [
         (diff[0], 0, 0),
         (0, diff[1], 0),
         (0, 0, diff[2])
     ]
-    for height in range(4):
-        for order in orders:
-            position = start
-            failed = False
+    for direction in directions:
+        for distance in range(10):
+            for order in orders:
+                position = start
+                failed = False
 
-            lines = simplify_vectors([
-                (0, height, 0),
-                components[order[0]],
-                components[order[1]],
-                components[order[2]],
-                (0, -height, 0)
-            ])
-            lines = [line for line in lines if trace.l1norm(line) > 0]
-            for line in lines:
-                direction = trace.direction_vector(line)
-                for i in range(trace.l1norm(line)):
-                    position = trace.coord_add(position, direction)
-                    if is_occupied(position):
-                        failed = True
+                lines = simplify_vectors([
+                    trace.coord_scalar_multiply(direction, distance),
+                    components[order[0]],
+                    components[order[1]],
+                    components[order[2]],
+                    trace.coord_scalar_multiply(direction, -distance)
+                ])
+                lines = [line for line in lines if trace.l1norm(line) > 0]
+                for line in lines:
+                    move_direction = trace.direction_vector(line)
+                    for i in range(trace.l1norm(line)):
+                        position = trace.coord_add(position, move_direction)
+                        if is_occupied(position):
+                            failed = True
+                            break
+                    if failed:
                         break
-                if failed:
-                    break
-            if not failed:
-                return lines
+                if not failed:
+                    return lines
     return None
 
 def bounded_search(start, goal, dimensions, is_occupied, bounds = None):
