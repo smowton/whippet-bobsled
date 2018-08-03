@@ -194,6 +194,12 @@ class Target:
         self.reserved = False
         self.parent = None
 
+    def __repr__(self):
+        parent_position = self.parent.position if self.parent else None
+        return "Target position: {0}, parent.position: {1}, get_voxels(): {2}, printed_voxels: {3}".format(
+            self.position, parent_position, self.get_voxels(), self.printed_voxels
+        )
+
     def is_occupied_by_worker(self, bots):
         return self.get_worker_position() in bots
 
