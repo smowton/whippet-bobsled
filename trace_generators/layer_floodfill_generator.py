@@ -358,8 +358,8 @@ class Bot:
     def idle(self):
         return trace.Trace.Wait(self.id)
 
-    def move(self, goal):
-        self.queue.append((Action.MOVE, goal, None))
+    def move(self, goal, bounded = True):
+        self.queue.append((Action.MOVE, goal, bounded, None))
         return self.next_step()
 
     def fill(self, voxel):
@@ -395,7 +395,7 @@ class Bot:
         return (command, None)
 
     def move_step(self, action):
-        goal, commands = action
+        goal, bounded, commands = action
 
         if goal == self.position:
             raise Exception('Move step when already at goal')
@@ -411,10 +411,10 @@ class Bot:
             #     path = pathfinding.quick_overhead_search(self.position, goal, self.world.is_occupied_state)
             if not path:
                 print '!PATHFINDING!', self.position, goal
-                path = pathfinding.bounded_search(self.position, goal, self.world.model.shape, self.world.is_occupied_bots, self.world.bounds)
+                path = pathfinding.bounded_search(self.position, goal, self.world.model.shape, self.world.is_occupied_bots, self.world.bounds if bounded else None)
             if not path:
                 print self.id, 'IDLE, NO PATH'
-                return (self.idle(), (Action.MOVE, goal, None))
+                return (self.idle(), (Action.MOVE, goal, bounded, None))
             commands = pathfinding.path_to_commands(path, self.id)
 
         if commands:
@@ -424,14 +424,14 @@ class Bot:
                 self.world.update_bot_position(self.position, new_position)
                 self.position = new_position
                 self.world.volatile.update(path_points)
-                action = (Action.MOVE, goal, commands[1:]) if len(commands) > 1 else None
+                action = (Action.MOVE, goal, bounded, commands[1:]) if len(commands) > 1 else None
                 return (commands[0], action)
             else:
                 print self.id, 'IDLE, UNEXPECTED OBSTRUCTION'
-                return (self.idle(), (Action.MOVE, goal, commands))
+                return (self.idle(), (Action.MOVE, goal, bounded, commands))
         else:
             print self.id, 'IDLE, KNOWN OBSTRUCTION'
-            return (self.idle(), (Action.MOVE, goal, commands))
+            return (self.idle(), (Action.MOVE, goal, bounded, commands))
 
 def build_trace(model, total_bots = 40):
     world = World(model, total_bots)
