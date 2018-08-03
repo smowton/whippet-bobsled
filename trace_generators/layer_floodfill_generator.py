@@ -122,7 +122,7 @@ class World:
         ])
 
         print 'GETTING LAYERS'
-        self.layers = model_functions.get_floodfill_layers(model)
+        self.layers = model_functions.get_floodfill_layers(self.model)
         print 'GETTING TARGETS'
         self.targets = get_targets(self.layers)
 
