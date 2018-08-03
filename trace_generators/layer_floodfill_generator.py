@@ -119,15 +119,15 @@ class World:
 
         self.step = 0
 
-    def find_target(self, position, active):
-        targets = self.active_targets if active else self.inactive_targets
+    def find_target(self, position, ready):
+        targets = self.ready_targets if ready else self.unready_targets
         sorted_targets = sorted([target for target in targets if not target.reserved], key=lambda target: trace.l1norm(subtract(target.get_worker_position(), position)))
         sorted_targets = sorted(sorted_targets, key=lambda target: target.floodfill_depth)
         return next(iter(sorted_targets), None)
 
     def update_targets(self):
-        self.active_targets = [target for target in self.targets if target.is_ready(self.state, self.bots)]
-        self.inactive_targets = [target for target in self.targets if not target.is_ready(self.state, self.bots) and not target.is_finished()]
+        self.ready_targets = [target for target in self.targets if target.is_ready(self.state, self.bots)]
+        self.unready_targets = [target for target in self.targets if not target.is_ready(self.state, self.bots) and not target.is_finished()]
 
     def is_occupied(self, position, check_bots = False, check_volatile = False):
         if not in_range(position, self.model.shape):
@@ -159,8 +159,8 @@ class World:
 
         if len([True for command in commands if isinstance(command, trace.Trace.Wait)]) == len(commands):
             print 'FINISH BY IDLE'
-            print 'ACTIVE:', self.active_targets
-            print 'INACTIVE:', self.inactive_targets
+            print 'READY:', self.ready_targets
+            print 'UNREADY:', self.unready_targets
             for bot in self.bots.values():
                 print 'BOT', bot, bot.queue
                 if bot.target:
