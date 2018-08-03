@@ -333,12 +333,6 @@ class Bot:
                     print self.position, self.target.get_worker_position()
                     return self.move(self.target.get_worker_position())
 
-                # if not self.target.is_ready(self.world.state, self.world.bots):
-                #     self.target.reserved = False
-                #     self.target = None
-                #     print self.id, 'TARGET END'
-                #     return self.idle()
-
                 voxel = self.target.get_printable_voxel(self.world.state)
                 if voxel:
                     self.target.printed_voxels += 1
