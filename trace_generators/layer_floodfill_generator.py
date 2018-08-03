@@ -280,13 +280,17 @@ class Bot:
         self.counter += 1
 
         if self.mode == Mode.INITIALISER:
-            center = (self.world.model.shape[1] / 2, self.world.model.shape[2] / 2)
-            if counter == 0:
-                return self.move((0, center[0], center[1]))
-            elif counter == 1:
-                command = self.split(Mode.BUILDER_UP, (0, 1, 0), (len(self.seeds) - 1) / 2)
-                self.set_mode(Mode.BUILDER_DOWN)
-                return command
+            if len(self.world.bots) < self.world.desired_bots:
+                center = (self.world.model.shape[1] / 2, self.world.model.shape[2] / 2)
+                if counter == 0:
+                    return self.move((0, center[0], center[1]))
+                elif counter == 1:
+                    command = self.split(Mode.BUILDER_UP, (0, 1, 0), (len(self.seeds) - 1) / 2)
+                    self.set_mode(Mode.BUILDER_DOWN)
+                    return command
+
+            self.set_mode(Mode.WORKER)
+            return self.next_step()
 
         if self.mode == Mode.BUILDER_UP:
             if len(self.world.bots) < self.world.desired_bots:
