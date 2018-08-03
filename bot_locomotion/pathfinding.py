@@ -1,12 +1,14 @@
 import numpy as np
 import datatypes.trace as trace
 
-directions = [[-1, 0, 0],
-             [ 0,-1, 0],
-             [ 1, 0, 0],
-             [ 0, 1, 0],
-             [ 0, 0,-1],
-             [ 0, 0, 1]]
+directions = [
+    (0, 1, 0),
+    (0, -1, 0),
+    (1, 0, 0),
+    (-1, 0, 0),
+    (0, 0, 1),
+    (0, 0, -1)
+]
 cost = 1
 
 def move_direction(x, y, z, direction, multiplier = 1):
