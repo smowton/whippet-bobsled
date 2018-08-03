@@ -62,22 +62,8 @@ def get_targets(layers, layer_index = 0, previous_layer_height = -1, previous_la
     for child_layer_index in layer[2]:
         child_targets.update(get_targets(layers, child_layer_index, layer[1], targets, floodfill_depth + 1))
     targets.update(child_targets)
-
     return targets
 
-def calculate_max_targets(layers, index = 0):
-    target_counts = []
-    while True:
-        layer = layers[index]
-        target_counts.append(len(get_layer_targets(layer[0], 1)))
-        if len(layer[2]) == 2:
-            target_counts.append(calculate_max_targets(layers, layer[2][0]) + calculate_max_targets(layers, layer[2][1]))
-            break
-        if len(layer[2]) == 1:
-            index = layer[2][0]
-        if len(layer[2]) == 0:
-            break
-    return max(target_counts)
 
 def calculate_initial_seeds_kept(desired_bots, max_height):
     production = 0
@@ -126,8 +112,7 @@ class World:
         print 'GETTING TARGETS'
         self.targets = get_targets(self.layers)
 
-        self.desired_bots = min(total_bots, calculate_max_targets(self.layers))
-        self.desired_bots = 20
+        self.desired_bots = total_bots
         self.initial_seeds_kept = calculate_initial_seeds_kept(self.desired_bots, self.model.shape[1])
 
         self.is_occupied_state = lambda position: self.is_occupied(position, check_bots = False)
