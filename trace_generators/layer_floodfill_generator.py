@@ -158,11 +158,13 @@ class World:
         self.commands += commands
 
         if len([True for command in commands if isinstance(command, trace.Trace.Wait)]) == len(commands):
-            print 'FINISH BY IDLE', len(self.active_targets), len(self.inactive_targets)
+            print 'FINISH BY IDLE'
+            print 'ACTIVE:', self.active_targets
+            print 'INACTIVE:', self.inactive_targets
             for bot in self.bots.values():
                 print 'BOT', bot, bot.queue
                 if bot.target:
-                    print 'TARGET', bot.target.get_worker_position(),  bot.target.get_voxels()
+                    print '  TARGET', bot.target
             return False
 
         self.step += 1
@@ -337,7 +339,7 @@ class Bot:
                 if target:
                     self.target = target
                     target.reserved = True
-                    print self.id, 'TARGET CHOSEN'
+                    print self.id, 'TARGET CHOSEN', target, target.position, target.get_voxels()
                     return  self.next_step()
                 print self.id, 'NO TARGET, MOVING AWAY'
                 self.mode = Mode.IDLER
@@ -346,7 +348,9 @@ class Bot:
         if self.mode == Mode.IDLER:
             idle_position = (0, self.id / 10, self.id % 10)
             if self.position != idle_position:
-                return self.move(idle_position)
+                print self.id, 'IDLER, MOVING'
+                return self.move(idle_position, False)
+            print self.id, 'IDLER, IDLING'
             return self.idle()
 
         raise Exception('Bot had no valid next step')
