@@ -58,12 +58,11 @@ def get_targets(layers, layer_index = 0, previous_layer_height = -1, previous_la
         if parent_target_position in previous_layer_targets:
             target.parent = previous_layer_targets[parent_target_position]
 
-    child_targets = dict()
+    child_targets = []
     for child_layer_index in layer[2]:
-        child_targets.update(get_targets(layers, child_layer_index, layer[1], targets, floodfill_depth + 1))
-    targets.update(child_targets)
-    return targets
+        child_targets += get_targets(layers, child_layer_index, layer[1], targets, floodfill_depth + 1)
 
+    return targets.values() + child_targets
 
 def calculate_initial_seeds_kept(desired_bots, max_height):
     production = 0
@@ -127,8 +126,8 @@ class World:
         return next(iter(sorted_targets), None)
 
     def update_targets(self):
-        self.active_targets = [target for target in self.targets.values() if target.is_ready(self.state, self.bots)]
-        self.inactive_targets = [target for target in self.targets.values() if not target.is_ready(self.state, self.bots) and not target.is_finished()]
+        self.active_targets = [target for target in self.targets if target.is_ready(self.state, self.bots)]
+        self.inactive_targets = [target for target in self.targets if not target.is_ready(self.state, self.bots) and not target.is_finished()]
 
     def is_occupied(self, position, check_bots = False, check_volatile = False):
         if not in_range(position, self.model.shape):
