@@ -346,7 +346,7 @@ class Bot:
                 return self.next_step()
 
         if self.mode == Mode.IDLER:
-            idle_position = (0, self.id / 10, self.id % 10)
+            idle_position = (0, self.id / 10 + 10, self.id % 10)
             if self.position != idle_position:
                 print self.id, 'IDLER, MOVING'
                 return self.move(idle_position, False)
