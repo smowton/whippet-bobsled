@@ -243,7 +243,7 @@ def calc_heuristic(dimensions, goal):
     for z in range(dimensions[2]):
         for y in range(dimensions[1]):
             for x in range(dimensions[0]):
-                heuristic[x, y, z] = (x - goal[0]) + (y - goal[1]) + (z - goal[2])
+                heuristic[x, y, z] = abs(x - goal[0]) + abs(y - goal[1]) + abs(z - goal[2])
     return heuristic
 
 def search_path_lines(path):
