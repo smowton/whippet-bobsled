@@ -188,7 +188,7 @@ def search(start, goal, dimensions, is_occupied, bounds):
     h = heuristic[x, y, z]
     f = g + h
 
-    open_set = [[f, g, x, y, z]]
+    open_set = [[f, g, x, y, z, -1]]
 
     found = False  # flag that is set when search is complete
     resign = False # flag set if we can't find expand
@@ -207,6 +207,7 @@ def search(start, goal, dimensions, is_occupied, bounds):
             z = nextl[4]
             g = nextl[1]
             f = nextl[0]
+            prev_direction = nextl[5]
             count += 1
 
             if x == goal[0] and y == goal[1] and z == goal[2]:
@@ -217,10 +218,10 @@ def search(start, goal, dimensions, is_occupied, bounds):
 
                     if z2 >= 0 and z2 < zdim and y2 >=0 and y2 < ydim and x2 >=0 and x2 < xdim:
                         if not (x2, y2, z2) in closed_set and not is_occupied((x2 + bounds[0][0], y2 + bounds[0][1], z2 + bounds[0][2])):
-                            continuation = (x2, y2, z2) in actions
+                            continuation = i == prev_direction
                             g2 = g + step_cost
                             f2 = g2 + heuristic[x2,y2,z2] + (0 if continuation else 1)
-                            open_set.append([f2, g2, x2, y2, z2])
+                            open_set.append([f2, g2, x2, y2, z2, i])
                             closed_set.add((x2,y2,z2))
                             actions[(x2,y2,z2)] = i
                     else:
