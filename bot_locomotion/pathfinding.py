@@ -9,7 +9,7 @@ directions = [
     (0, 0, 1),
     (0, 0, -1)
 ]
-cost = 1
+step_cost = 1
 
 def move_direction(x, y, z, direction, multiplier = 1):
     x = x + directions[direction][0] * multiplier
@@ -181,39 +181,32 @@ def search(start, goal, dimensions, is_occupied, bounds):
     y = start[1]
     z = start[2]
 
-    closed = np.empty((xdim, ydim, zdim), dtype = np.int8)
-    closed[:] = 0
-    closed[x, y, z] = 1
-
-    expand = np.empty((xdim, ydim, zdim), dtype = np.int8)
-    expand[:] = -1
-    action = np.empty((xdim, ydim, zdim), dtype = np.int8)
-    action[:] = -1
+    closed_set = set((x, y, z))
+    actions = dict()
 
     g = 0
     h = heuristic[x, y, z]
     f = g + h
 
-    openl = [[f, g, x, y, z]]
+    open_set = [[f, g, x, y, z]]
 
     found = False  # flag that is set when search is complete
     resign = False # flag set if we can't find expand
     count = 0
 
     while not found and not resign and count < 1e6:
-        if len(openl) == 0:
+        if len(open_set) == 0:
             resign = True
             return None
         else:
-            openl.sort(reverse=True)
-            nextl = openl.pop()
+            open_set.sort(reverse=True)
+            nextl = open_set.pop()
 
             x = nextl[2]
             y = nextl[3]
             z = nextl[4]
             g = nextl[1]
             f = nextl[0]
-            expand[x,y,z] = count
             count += 1
 
             if x == goal[0] and y == goal[1] and z == goal[2]:
@@ -223,21 +216,13 @@ def search(start, goal, dimensions, is_occupied, bounds):
                     x2, y2, z2 = move_direction(x, y, z, i)
 
                     if z2 >= 0 and z2 < zdim and y2 >=0 and y2 < ydim and x2 >=0 and x2 < xdim:
-                        if closed[x2,y2,z2] == 0 and not is_occupied((x2 + bounds[0][0], y2 + bounds[0][1], z2 + bounds[0][2])):
-
-                            continuation = False
-                            for j in range(len(directions)):
-                                x3, y3, z3 = move_direction(x2, y2, z2, j)
-                                if (x3 >= 0 and x3 < xdim and y3 >= 0 and y3 < ydim and z3 >= 0 and z3 < zdim):
-                                    x4, y4, z4 = move_direction(x2, y2, z2, action[x3, y3, z3])
-                                    if x2 == x4 and y2 == y4 and z2 == z4:
-                                        continuation = True
-
-                            g2 = g + cost
-                            f2 = g2 + heuristic[x2,y2,z2] + (0 if continuation else 10)
-                            openl.append([f2, g2, x2, y2, z2])
-                            closed[x2,y2,z2] = 1
-                            action[x2,y2,z2] = i
+                        if not (x2, y2, z2) in closed_set and not is_occupied((x2 + bounds[0][0], y2 + bounds[0][1], z2 + bounds[0][2])):
+                            continuation = (x2, y2, z2) in actions
+                            g2 = g + step_cost
+                            f2 = g2 + heuristic[x2,y2,z2] + (0 if continuation else 1)
+                            open_set.append([f2, g2, x2, y2, z2])
+                            closed_set.add((x2,y2,z2))
+                            actions[(x2,y2,z2)] = i
                     else:
                         pass
 
@@ -245,7 +230,7 @@ def search(start, goal, dimensions, is_occupied, bounds):
     path.append((goal[0], goal[1], goal[2]))
 
     while x != start[0] or y != start[1] or z != start[2]:
-        x, y, z = move_direction(x, y, z, action[x, y, z], -1)
+        x, y, z = move_direction(x, y, z, actions[(x, y, z)], -1)
         path.append((x, y, z))
 
     path.reverse()
