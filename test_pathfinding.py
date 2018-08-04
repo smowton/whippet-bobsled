@@ -3,22 +3,25 @@ import model_reader.model_reader as model_reader
 import model_reader.model_functions as model_functions
 import datatypes.trace as trace
 
-grid = model_reader.read('./data/problems/LA001_tgt.mdl')
+grid = model_reader.read('./data/problems/LA100_tgt.mdl')
 bounds = model_functions.outer_bounds(grid)
 
-start = (8, 1, 2)
-goal = (12, 4, 18)
-path = pathfinding.move(start, goal, grid, bounds)
+start = (30, 27, 50)
+goal = (35, 15, 30)
+# goal = (31, 27, 50)
+is_occupied = lambda position: grid[position[0], position[1], position[2]]
+print is_occupied(start), is_occupied(goal)
 
-edges = [start]
-position = start
-for line in path:
-    position = trace.coord_add(position, line)
-    edges.append(position)
+path = pathfinding.bounded_search(start, goal, grid.shape, is_occupied)
 
-edges.append(goal)
+if path:
+    edges = [start]
+    position = start
+    for line in path:
+        position = trace.coord_add(position, line)
+        edges.append(position)
 
-model_reader.dump_slices(grid, edges)
+    edges.append(goal)
 
-print path
-print pathfinding.path_to_commands(path)
+    # model_reader.dump_slices(grid, edges, bounds[1][1])
+    print path
