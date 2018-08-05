@@ -1,6 +1,10 @@
 import numpy as np
 import datatypes.trace as trace
 
+add = trace.coord_add
+subtract = trace.coord_subtract
+scalar_multiply = trace.coord_scalar_multiply
+
 directions = [
     (0, 1, 0),
     (0, -1, 0),
@@ -22,7 +26,7 @@ def simplify_vectors(vectors):
     new_vectors = []
     while i < len(vectors):
         if i < len(vectors) - 1 and trace.direction_vector(vectors[i]) == trace.direction_vector(vectors[i + 1]):
-            new_vectors.append(trace.coord_add(vectors[i], vectors[i + 1]))
+            new_vectors.append(add(vectors[i], vectors[i + 1]))
             i += 2
         else:
             new_vectors.append(vectors[i])
@@ -67,12 +71,18 @@ def move(start, goal, dimensions, is_occupied, bounds = None):
 
     return path_start + search_path + path_end
 
+def within_bounds(position, bounds):
+    if position[0] >= 0 and position[0] < bounds[0]:
+        if position[1] >=0 and position[1] < bounds[1]:
+            if position[2] >=0 and position[2] < bounds[2]:
+                return True
+    return False
 
 # All possible orders of the 3 axes of direction
 orders = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
 
 def quick_search(start, goal, is_occupied):
-    diff = trace.coord_subtract(goal, start)
+    diff = subtract(goal, start)
     components = [
         (diff[0], 0, 0),
         (0, diff[1], 0),
@@ -86,7 +96,7 @@ def quick_search(start, goal, is_occupied):
         for line in lines:
             direction = trace.direction_vector(line)
             for i in range(trace.l1norm(line)):
-                position = trace.coord_add(position, direction)
+                position = add(position, direction)
                 if is_occupied(position):
                     failed = True
                     break
@@ -97,7 +107,7 @@ def quick_search(start, goal, is_occupied):
     return None
 
 def quick_around_search(start, goal, is_occupied):
-    diff = trace.coord_subtract(goal, start)
+    diff = subtract(goal, start)
     components = [
         (diff[0], 0, 0),
         (0, diff[1], 0),
@@ -110,17 +120,17 @@ def quick_around_search(start, goal, is_occupied):
                 failed = False
 
                 lines = simplify_vectors([
-                    trace.coord_scalar_multiply(direction, distance),
+                    scalar_multiply(direction, distance),
                     components[order[0]],
                     components[order[1]],
                     components[order[2]],
-                    trace.coord_scalar_multiply(direction, -distance)
+                    scalar_multiply(direction, -distance)
                 ])
                 lines = [line for line in lines if trace.l1norm(line) > 0]
                 for line in lines:
                     move_direction = trace.direction_vector(line)
                     for i in range(trace.l1norm(line)):
-                        position = trace.coord_add(position, move_direction)
+                        position = add(position, move_direction)
                         if is_occupied(position):
                             failed = True
                             break
@@ -157,105 +167,71 @@ def bounded_search(start, goal, dimensions, is_occupied, bounds = None):
     if goal != bounded_goal:
         path_end = quick_search(bounded_goal, goal, is_occupied)
 
-    search_path = search(bounded_start, bounded_goal, dimensions, is_occupied, bounds)
+    offset_start = subtract(bounded_start, bounds[0])
+    offset_goal = subtract(bounded_goal, bounds[0])
+
+    bounded_dimensions = add(subtract(bounds[1], bounds[0]), (1, 1, 1))
+    is_occupied_offset = lambda location: is_occupied(add(location, bounds[0]))
+
+    search_path = search(offset_start, offset_goal, bounded_dimensions, is_occupied_offset)
 
     if path_start == None or search_path == None or path_end == None:
         return None
 
     return path_start + search_path + path_end
 
-def search(start, goal, dimensions, is_occupied, bounds):
+def search(start, goal, dimensions, is_occupied):
     if start == goal:
         return []
 
-    heuristic = calc_heuristic(dimensions, goal)
-
-    start = trace.coord_subtract(start, bounds[0])
-    goal = trace.coord_subtract(goal, bounds[0])
-
-    xdim = bounds[1][0] - bounds[0][0] + 1
-    ydim = bounds[1][1] - bounds[0][1] + 1
-    zdim = bounds[1][2] - bounds[0][2] + 1
-
-    x = start[0]
-    y = start[1]
-    z = start[2]
-
-    closed_set = set((x, y, z))
+    closed_set = set(start)
     actions = dict()
 
-    g = 0
-    h = heuristic[x, y, z]
-    f = g + h
+    open_set = [(heuristic(start, goal), 0, start, -1)]
 
-    open_set = [[f, g, x, y, z, -1]]
-
-    found = False  # flag that is set when search is complete
-    resign = False # flag set if we can't find expand
-    count = 0
-
-    while not found and not resign and count < 1e6:
+    found = False
+    while not found:
         if len(open_set) == 0:
-            resign = True
             return None
         else:
             open_set.sort(reverse=True)
-            nextl = open_set.pop()
+            total_cost, path_cost, location, prev_direction = open_set.pop()
 
-            x = nextl[2]
-            y = nextl[3]
-            z = nextl[4]
-            g = nextl[1]
-            f = nextl[0]
-            prev_direction = nextl[5]
-            count += 1
-
-            if x == goal[0] and y == goal[1] and z == goal[2]:
+            if location == goal:
                 found = True
             else:
-                for i in range(len(directions)):
-                    x2, y2, z2 = move_direction(x, y, z, i)
-
-                    if z2 >= 0 and z2 < zdim and y2 >=0 and y2 < ydim and x2 >=0 and x2 < xdim:
-                        if not (x2, y2, z2) in closed_set and not is_occupied((x2 + bounds[0][0], y2 + bounds[0][1], z2 + bounds[0][2])):
-                            continuation = i == prev_direction
-                            g2 = g + step_cost
-                            f2 = g2 + heuristic[x2,y2,z2] + (0 if continuation else 1)
-                            open_set.append([f2, g2, x2, y2, z2, i])
-                            closed_set.add((x2,y2,z2))
-                            actions[(x2,y2,z2)] = i
-                    else:
-                        pass
+                for direction in directions:
+                    new_location = add(location, direction)
+                    if within_bounds(new_location, dimensions):
+                        if not new_location in closed_set and not is_occupied(new_location):
+                            continuation = direction == prev_direction
+                            new_path_cost = path_cost + step_cost
+                            total_cost = new_path_cost + heuristic(new_location, goal) + (0 if continuation else 1)
+                            open_set.append((total_cost, new_path_cost, new_location, direction))
+                            closed_set.add(new_location)
+                            actions[new_location] = direction
 
     path=[]
-    path.append((goal[0], goal[1], goal[2]))
-
-    while x != start[0] or y != start[1] or z != start[2]:
-        x, y, z = move_direction(x, y, z, actions[(x, y, z)], -1)
-        path.append((x, y, z))
+    path.append(goal)
+    while location != start:
+        location = add(location, scalar_multiply(actions[location], -1))
+        path.append(location)
 
     path.reverse()
     return search_path_lines(path)
 
-def calc_heuristic(dimensions, goal):
-    heuristic = np.empty(dimensions, dtype=np.float32)
-    heuristic[:] = 0.0
-
-    for z in range(dimensions[2]):
-        for y in range(dimensions[1]):
-            for x in range(dimensions[0]):
-                heuristic[x, y, z] = abs(x - goal[0]) + abs(y - goal[1]) + abs(z - goal[2])
-    return heuristic
+def heuristic(position, goal):
+    return abs(position[0] - goal[0]) + abs(position[1] - goal[1]) + abs(position[2] - goal[2])
 
 def search_path_lines(path):
     if len(path) < 2:
         return []
     lines = []
-    direction = trace.coord_subtract(path[1], path[0])
+    direction = subtract(path[1], path[0])
     lines.append((0, direction))
     index = 1
     while index < len(path):
-        new_direction = trace.coord_subtract(path[index], path[index - 1])
+        new_direction = subtract(path[index], path[index - 1])
         if direction != new_direction:
             direction = new_direction
             lines.append((1, direction))
