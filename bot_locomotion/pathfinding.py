@@ -33,44 +33,6 @@ def simplify_vectors(vectors):
             i += 1
     return new_vectors
 
-def move(start, goal, dimensions, is_occupied, bounds = None):
-    if start == goal:
-        return []
-
-    path = quick_search(start, goal, is_occupied)
-    if (path):
-        return path
-
-    if not bounds:
-        bounds = ((0,0,0), (dimensions[0] - 1, dimensions[1] - 1, dimensions[2] - 1))
-
-    bounded_start = (
-        min(max(start[0], bounds[0][0]), bounds[1][0]),
-        min(max(start[1], bounds[0][1]), bounds[1][1]),
-        min(max(start[2], bounds[0][2]), bounds[1][2]),
-    )
-
-    bounded_goal = (
-        min(max(goal[0], bounds[0][0]), bounds[1][0]),
-        min(max(goal[1], bounds[0][1]), bounds[1][1]),
-        min(max(goal[2], bounds[0][2]), bounds[1][2]),
-    )
-
-    path_start = []
-    if start != bounded_start:
-        path_start = quick_search(start, bounded_start, is_occupied)
-
-    path_end = []
-    if goal != bounded_goal:
-        path_end = quick_search(bounded_goal, goal, is_occupied)
-
-    search_path = search(bounded_start, bounded_goal, dimensions, is_occupied, bounds)
-
-    if not search_path:
-        return None
-
-    return path_start + search_path + path_end
-
 def within_bounds(position, bounds):
     if position[0] >= 0 and position[0] < bounds[0]:
         if position[1] >=0 and position[1] < bounds[1]:
